@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ConflictException,
+  Inject,
   Injectable,
   UnauthorizedException,
 } from "@nestjs/common";
@@ -29,9 +30,13 @@ export class AuthService {
   private readonly refreshTokenSecret: string;
 
   constructor(
+    @Inject(UsersService)
     private readonly usersService: UsersService,
+    @Inject(PrismaService)
     private readonly prisma: PrismaService,
+    @Inject(JwtService)
     private readonly jwtService: JwtService,
+    @Inject(ConfigService)
     private readonly configService: ConfigService,
   ) {
     this.accessTokenTtl = this.configService.get("ACCESS_TOKEN_TTL", "15m");

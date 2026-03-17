@@ -1,0 +1,156 @@
+"use client";
+
+import axios from "axios";
+import { useAuthStore } from "./auth-store";
+import type {
+  AuthResponse,
+  CurrentUserResponse,
+  LoginPayload,
+  RegisterPayload,
+  RequestPasswordResetPayload,
+  ResetPasswordPayload,
+} from "./types";
+
+const baseURL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001/api";
+
+const publicClient = axios.create({
+  baseURL,
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
+
+export const api = axios.create({
+  baseURL,
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
+
+let refreshPromise: Promise<string | null> | null = null;
+
+api.interceptors.request.use((config) => {
+  const token = useAuthStore.getState().accessToken;
+
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+
+  return config;
+});
+
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config as
+      | (typeof error.config & { _retry?: boolean })
+      | undefined;
+
+    if (
+      error.response?.status !== 401 ||
+      !originalRequest ||
+      originalRequest._retry ||
+      originalRequest.url?.includes("/auth/refresh")
+    ) {
+      if (originalRequest?.url?.includes("/auth/refresh")) {
+        useAuthStore.getState().clearSession();
+      }
+
+      return Promise.reject(error);
+    }
+
+    const refreshToken = useAuthStore.getState().refreshToken;
+
+    if (!refreshToken) {
+      useAuthStore.getState().clearSession();
+      return Promise.reject(error);
+    }
+
+    originalRequest._retry = true;
+    refreshPromise ??= refreshAccessToken(refreshToken).finally(() => {
+      refreshPromise = null;
+    });
+
+    const nextAccessToken = await refreshPromise;
+
+    if (!nextAccessToken) {
+      return Promise.reject(error);
+    }
+
+    originalRequest.headers.Authorization = `Bearer ${nextAccessToken}`;
+
+    return api(originalRequest);
+  },
+);
+
+async function refreshAccessToken(refreshToken: string) {
+  try {
+    const { data } = await publicClient.post<AuthResponse>("/auth/refresh", {
+      refreshToken,
+    });
+
+    useAuthStore.getState().setSession(data);
+
+    return data.tokens.accessToken;
+  } catch {
+    useAuthStore.getState().clearSession();
+    return null;
+  }
+}
+
+export async function loginUser(payload: LoginPayload) {
+  const { data } = await publicClient.post<AuthResponse>("/auth/login", payload);
+  return data;
+}
+
+export async function registerUser(payload: RegisterPayload) {
+  const { data } = await publicClient.post<AuthResponse>(
+    "/auth/register",
+    payload,
+  );
+  return data;
+}
+
+export async function requestPasswordReset(payload: RequestPasswordResetPayload) {
+  const { data } = await publicClient.post<{
+    message: string;
+    developmentResetToken?: string;
+  }>("/auth/request-password-reset", payload);
+  return data;
+}
+
+export async function resetPassword(payload: ResetPasswordPayload) {
+  const { data } = await publicClient.post<{ message: string }>(
+    "/auth/reset-password",
+    payload,
+  );
+  return data;
+}
+
+export async function getCurrentUser() {
+  const { data } = await api.get<CurrentUserResponse>("/auth/me");
+  return data;
+}
+
+export async function logoutUser(refreshToken: string) {
+  const { data } = await publicClient.post<{ message: string }>("/auth/logout", {
+    refreshToken,
+  });
+  return data;
+}
+
+export function getApiErrorMessage(error: unknown) {
+  if (axios.isAxiosError(error)) {
+    const message = error.response?.data?.message;
+
+    if (Array.isArray(message)) {
+      return message.join(" ");
+    }
+
+    if (typeof message === "string") {
+      return message;
+    }
+  }
+
+  return "Wystapil nieoczekiwany blad.";
+}

@@ -1,26 +1,68 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f5ecdd;
+  --foreground: #28190f;
+  --foreground-muted: #6f5847;
+  --foreground-subtle: #9a806c;
+  --surface: #efe1cd;
+  --surface-strong: #dfc8aa;
+  --card: rgba(255, 249, 242, 0.86);
+  --hero: linear-gradient(180deg, rgba(255, 247, 234, 0.92) 0%, rgba(241, 222, 196, 0.84) 100%);
+  --accent: #b85f2f;
+  --accent-strong: #8f4520;
+  --badge: #f7d6b4;
+  --border: rgba(106, 74, 46, 0.16);
+  --ring: rgba(184, 95, 47, 0.26);
+  --font-sans-name: "Aptos", "Segoe UI", "Trebuchet MS", sans-serif;
+  --font-display-name: "Palatino Linotype", "Book Antiqua", Georgia, serif;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-sans-name);
+  --font-display: var(--font-display-name);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-height: 100%;
+  scroll-behavior: smooth;
 }
 
 body {
-  background: var(--background);
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top, rgba(255, 240, 208, 0.85), transparent 34%),
+    linear-gradient(180deg, #f8f1e6 0%, #f0e1ca 52%, #ead9bf 100%);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans-name);
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  opacity: 0.32;
+  background-image:
+    linear-gradient(rgba(92, 64, 41, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(92, 64, 41, 0.04) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+a {
+  text-decoration: none;
+}
+
+::selection {
+  background: rgba(184, 95, 47, 0.24);
+}
+
+.font-display {
+  font-family: var(--font-display-name);
 }

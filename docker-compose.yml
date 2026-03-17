@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: forum-rpg-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: forum_rpg
+      POSTGRES_USER: forum
+      POSTGRES_PASSWORD: forum
+    ports:
+      - "5432:5432"
+    volumes:
+      - forum-rpg-postgres-data:/var/lib/postgresql/data
+
+volumes:
+  forum-rpg-postgres-data:

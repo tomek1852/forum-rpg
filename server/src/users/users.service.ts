@@ -1,10 +1,22 @@
-import { Inject, Injectable } from "@nestjs/common";
+import { Inject, Injectable, NotFoundException } from "@nestjs/common";
 import { Prisma, User } from "@prisma/client";
 import { PrismaService } from "../prisma/prisma.service";
+import { UpdateProfileDto } from "./dto/update-profile.dto";
 
 export type PublicUser = Pick<
   User,
-  "id" | "email" | "username" | "role" | "createdAt" | "updatedAt"
+  | "id"
+  | "email"
+  | "username"
+  | "displayName"
+  | "bio"
+  | "avatarUrl"
+  | "role"
+  | "status"
+  | "emailVerified"
+  | "lastSeenAt"
+  | "createdAt"
+  | "updatedAt"
 >;
 
 @Injectable()
@@ -38,6 +50,40 @@ export class UsersService {
       where: { id: userId },
       data: { passwordHash },
     });
+  }
+
+  async touchLastSeen(userId: string) {
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: { lastSeenAt: new Date() },
+    });
+  }
+
+  async updateProfile(userId: string, dto: UpdateProfileDto) {
+    const user = await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        displayName: dto.displayName?.trim() || null,
+        bio: dto.bio?.trim() || null,
+        avatarUrl: dto.avatarUrl?.trim() || null,
+      },
+    });
+
+    return {
+      user: this.toPublicUser(user),
+    };
+  }
+
+  async getProfileById(userId: string) {
+    const user = await this.findById(userId);
+
+    if (!user) {
+      throw new NotFoundException("Nie znaleziono uzytkownika.");
+    }
+
+    return {
+      user: this.toPublicUser(user),
+    };
   }
 
   toPublicUser(user: User): PublicUser {

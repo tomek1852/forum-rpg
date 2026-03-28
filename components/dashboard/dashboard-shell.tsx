@@ -3,6 +3,8 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import Link from "next/link";
+import { CharacterCard } from "@/components/characters/character-card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,7 +14,12 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { getCurrentUser, getApiErrorMessage, logoutUser } from "@/lib/api";
+import {
+  getCurrentUser,
+  getApiErrorMessage,
+  getMyCharacters,
+  logoutUser,
+} from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
 
 export function DashboardShell() {
@@ -24,6 +31,11 @@ export function DashboardShell() {
   const profileQuery = useQuery({
     queryKey: ["current-user"],
     queryFn: getCurrentUser,
+    enabled: hydrated && Boolean(accessToken),
+  });
+  const charactersQuery = useQuery({
+    queryKey: ["my-characters"],
+    queryFn: getMyCharacters,
     enabled: hydrated && Boolean(accessToken),
   });
 
@@ -66,7 +78,7 @@ export function DashboardShell() {
     },
   });
 
-  if (!hydrated || (accessToken && profileQuery.isLoading)) {
+  if (!hydrated || (accessToken && (profileQuery.isLoading || charactersQuery.isLoading))) {
     return (
       <div className="min-h-screen px-4 py-10 lg:px-8">
         <div className="mx-auto max-w-6xl animate-pulse space-y-6">
@@ -86,6 +98,7 @@ export function DashboardShell() {
   }
 
   const profile = profileQuery.data?.user ?? user;
+  const characters = charactersQuery.data?.characters ?? [];
 
   return (
     <div className="min-h-screen px-4 py-10 lg:px-8">
@@ -99,19 +112,26 @@ export function DashboardShell() {
                   Witaj, {profile?.username ?? "Graczu"}
                 </h1>
                 <p className="mt-3 max-w-2xl text-lg leading-8 text-[color:var(--foreground-muted)]">
-                  Faza 1 jest gotowa: konto, sesja, role i reset hasla dzialaja
-                  jako fundament pod kolejne moduly PBF.
+                  Auth stoi stabilnie, a ten etap rozwija teraz profil gracza i
+                  zarzadzanie postaciami jako kolejny fragment rozszerzonego MVP.
                 </p>
               </div>
             </div>
-            <Button
-              size="lg"
-              variant="secondary"
-              onClick={() => logoutMutation.mutate()}
-              disabled={logoutMutation.isPending}
-            >
-              {logoutMutation.isPending ? "Wylogowywanie..." : "Wyloguj sie"}
-            </Button>
+            <div className="flex flex-wrap gap-3">
+              {profile ? (
+                <Button asChild size="lg">
+                  <Link href={`/profile/${profile.id}`}>Moj profil</Link>
+                </Button>
+              ) : null}
+              <Button
+                size="lg"
+                variant="secondary"
+                onClick={() => logoutMutation.mutate()}
+                disabled={logoutMutation.isPending}
+              >
+                {logoutMutation.isPending ? "Wylogowywanie..." : "Wyloguj sie"}
+              </Button>
+            </div>
           </div>
         </header>
         <section className="grid gap-6 lg:grid-cols-3">
@@ -127,8 +147,8 @@ export function DashboardShell() {
           />
           <InfoCard
             title="Nastepny krok"
-            value="Faza 2"
-            description="Na tej bazie mozna dokladac system postaci bez przebudowy auth."
+            value="Postacie"
+            description="Ten dashboard prowadzi teraz bezposrednio do profilu i kart postaci."
           />
         </section>
         <section className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
@@ -178,6 +198,36 @@ export function DashboardShell() {
                     : "-"
                 }
               />
+            </CardContent>
+          </Card>
+        </section>
+        <section className="grid gap-6">
+          <Card>
+            <CardHeader>
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                <div>
+                  <CardTitle>Moje postacie</CardTitle>
+                  <CardDescription>
+                    Moduly profilu i postaci sa juz podpiete do API oraz bazy danych.
+                  </CardDescription>
+                </div>
+                <Button asChild variant="secondary">
+                  <Link href="/character/new">Dodaj postac</Link>
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {characters.length > 0 ? (
+                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                  {characters.map((character) => (
+                    <CharacterCard character={character} editable key={character.id} />
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm leading-6 text-[color:var(--foreground-muted)]">
+                  Nie masz jeszcze zadnej postaci. Utworz pierwsza karte i uzupelnij jej opis oraz statystyki.
+                </p>
+              )}
             </CardContent>
           </Card>
         </section>

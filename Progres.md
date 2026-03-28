@@ -8,3 +8,12 @@
 - Zaimplementowano landing page, widoki `login`, `register`, `reset-password` i chroniony `dashboard` z React Query oraz Zustand.
 - Dodano testy `Jest` dla backendu i `React Testing Library` dla frontendu oraz konfiguracje pod `Playwright`.
 - Zweryfikowano faze poleceniami: `npm run lint`, `npm run test:web`, `npm --prefix server run test`, `npm --prefix server run build`, `npm run build:web`.
+
+## 2026-03-28 - ETAP 1 - profile i postacie - IN PROGRESS
+
+- Przeanalizowano nowa dokumentacje etapow i dostosowano dalszy kierunek prac do rozszerzonego `ETAPU 1`.
+- Rozszerzono model danych o `GM`, statusy kont (`PENDING_APPROVAL`, `ACTIVE`, `BLOCKED`), pola profilu uzytkownika oraz encje `Character`.
+- Dodano backend dla profili i postaci: endpointy `users/me`, `users/:userId`, `characters/my`, `characters/user/:userId`, `characters/:id`, `POST/PATCH characters`.
+- Zaimplementowano frontend dla profilu gracza i postaci: `profile/[userId]`, `character/new`, `character/[charId]`, `character/[charId]/edit`, a dashboard pokazuje teraz wlasne postacie.
+- Dodano testy backendowe dla modulu postaci oraz utrzymano zielone linty, testy i buildy dla `web` i `api`.
+- Zweryfikowano iteracje poleceniami: `npm --prefix server run prisma:generate`, `npm --prefix server run test`, `npm --prefix server run build`, `npm run lint`, `npm run test:web`, `npm run build:web`.

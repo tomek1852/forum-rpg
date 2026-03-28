@@ -9,7 +9,14 @@ datasource db {
 
 enum UserRole {
   PLAYER
+  GM
   ADMIN
+}
+
+enum AccountStatus {
+  PENDING_APPROVAL
+  ACTIVE
+  BLOCKED
 }
 
 model User {
@@ -18,11 +25,18 @@ model User {
   username            String               @unique
   passwordHash        String
   role                UserRole             @default(PLAYER)
+  status              AccountStatus        @default(ACTIVE)
   isActive            Boolean              @default(true)
+  emailVerified       Boolean              @default(false)
+  displayName         String?
+  bio                 String?
+  avatarUrl           String?
+  lastSeenAt          DateTime?
   createdAt           DateTime             @default(now())
   updatedAt           DateTime             @updatedAt
   refreshTokens       RefreshToken[]
   passwordResetTokens PasswordResetToken[]
+  characters          Character[]
 }
 
 model RefreshToken {
@@ -47,4 +61,22 @@ model PasswordResetToken {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+}
+
+model Character {
+  id          String   @id @default(uuid())
+  name        String
+  title       String?
+  summary     String?
+  biography   String?
+  appearance  String?
+  avatarUrl   String?
+  statsJson   Json?
+  isPublic    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  ownerId     String
+  owner       User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@index([ownerId])
 }

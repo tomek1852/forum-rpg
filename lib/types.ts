@@ -1,10 +1,17 @@
-export type Role = "PLAYER" | "ADMIN";
+export type Role = "PLAYER" | "GM" | "ADMIN";
+export type AccountStatus = "PENDING_APPROVAL" | "ACTIVE" | "BLOCKED";
 
 export interface User {
   id: string;
   email: string;
   username: string;
+  displayName: string | null;
+  bio: string | null;
+  avatarUrl: string | null;
   role: Role;
+  status: AccountStatus;
+  emailVerified: boolean;
+  lastSeenAt: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -21,6 +28,33 @@ export interface AuthResponse {
 
 export interface CurrentUserResponse {
   user: User;
+}
+
+export interface UserProfileResponse {
+  user: User;
+}
+
+export interface Character {
+  id: string;
+  name: string;
+  title: string | null;
+  summary: string | null;
+  biography: string | null;
+  appearance: string | null;
+  avatarUrl: string | null;
+  statsJson: Record<string, string | number> | null;
+  isPublic: boolean;
+  ownerId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CharacterResponse {
+  character: Character;
+}
+
+export interface CharactersResponse {
+  characters: Character[];
 }
 
 export interface LoginPayload {
@@ -41,4 +75,21 @@ export interface RequestPasswordResetPayload {
 export interface ResetPasswordPayload {
   token: string;
   newPassword: string;
+}
+
+export interface UpdateProfilePayload {
+  displayName?: string;
+  bio?: string;
+  avatarUrl?: string;
+}
+
+export interface CharacterPayload {
+  name: string;
+  title?: string;
+  summary?: string;
+  biography?: string;
+  appearance?: string;
+  avatarUrl?: string;
+  statsJson?: Record<string, string | number>;
+  isPublic?: boolean;
 }

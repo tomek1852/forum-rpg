@@ -4,11 +4,16 @@ import axios from "axios";
 import { useAuthStore } from "./auth-store";
 import type {
   AuthResponse,
+  CharacterPayload,
+  CharacterResponse,
+  CharactersResponse,
   CurrentUserResponse,
   LoginPayload,
   RegisterPayload,
   RequestPasswordResetPayload,
   ResetPasswordPayload,
+  UpdateProfilePayload,
+  UserProfileResponse,
 } from "./types";
 
 const baseURL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001/api";
@@ -136,6 +141,47 @@ export async function logoutUser(refreshToken: string) {
   const { data } = await publicClient.post<{ message: string }>("/auth/logout", {
     refreshToken,
   });
+  return data;
+}
+
+export async function getUserProfile(userId: string) {
+  const { data } = await api.get<UserProfileResponse>(`/users/${userId}`);
+  return data;
+}
+
+export async function updateMyProfile(payload: UpdateProfilePayload) {
+  const { data } = await api.patch<UserProfileResponse>("/users/me", payload);
+  return data;
+}
+
+export async function getMyCharacters() {
+  const { data } = await api.get<CharactersResponse>("/characters/my");
+  return data;
+}
+
+export async function getCharactersByUser(userId: string) {
+  const { data } = await api.get<CharactersResponse>(`/characters/user/${userId}`);
+  return data;
+}
+
+export async function getCharacter(characterId: string) {
+  const { data } = await api.get<CharacterResponse>(`/characters/${characterId}`);
+  return data;
+}
+
+export async function createCharacter(payload: CharacterPayload) {
+  const { data } = await api.post<CharacterResponse>("/characters", payload);
+  return data;
+}
+
+export async function updateCharacter(
+  characterId: string,
+  payload: CharacterPayload,
+) {
+  const { data } = await api.patch<CharacterResponse>(
+    `/characters/${characterId}`,
+    payload,
+  );
   return data;
 }
 

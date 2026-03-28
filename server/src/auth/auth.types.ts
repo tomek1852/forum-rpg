@@ -21,3 +21,14 @@ export interface AuthResponse {
     refreshTokenTtl: string;
   };
 }
+
+export interface RegisterResponse {
+  message: string;
+  user: PublicUser;
+  developmentVerificationToken?: string;
+}
+
+export interface VerificationResponse {
+  message: string;
+  developmentVerificationToken?: string;
+}

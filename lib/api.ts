@@ -9,11 +9,15 @@ import type {
   CharactersResponse,
   CurrentUserResponse,
   LoginPayload,
+  RegisterResponse,
   RegisterPayload,
+  RequestEmailVerificationPayload,
   RequestPasswordResetPayload,
   ResetPasswordPayload,
   UpdateProfilePayload,
   UserProfileResponse,
+  VerificationResponse,
+  VerifyEmailPayload,
 } from "./types";
 
 const baseURL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001/api";
@@ -109,8 +113,26 @@ export async function loginUser(payload: LoginPayload) {
 }
 
 export async function registerUser(payload: RegisterPayload) {
-  const { data } = await publicClient.post<AuthResponse>(
+  const { data } = await publicClient.post<RegisterResponse>(
     "/auth/register",
+    payload,
+  );
+  return data;
+}
+
+export async function requestEmailVerification(
+  payload: RequestEmailVerificationPayload,
+) {
+  const { data } = await publicClient.post<VerificationResponse>(
+    "/auth/request-email-verification",
+    payload,
+  );
+  return data;
+}
+
+export async function verifyEmail(payload: VerifyEmailPayload) {
+  const { data } = await publicClient.post<VerificationResponse>(
+    "/auth/verify-email",
     payload,
   );
   return data;

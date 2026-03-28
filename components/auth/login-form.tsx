@@ -89,6 +89,12 @@ export function LoginForm() {
           >
             Zapomniales hasla? Otworz reset
           </Link>
+          <Link
+            className="font-semibold text-[color:var(--accent-strong)]"
+            href="/verify-email"
+          >
+            Konto nieaktywne? Zweryfikuj email
+          </Link>
         </div>
       </CardContent>
     </Card>

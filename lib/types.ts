@@ -26,8 +26,19 @@ export interface AuthResponse {
   };
 }
 
+export interface RegisterResponse {
+  message: string;
+  user: User;
+  developmentVerificationToken?: string;
+}
+
 export interface CurrentUserResponse {
   user: User;
+}
+
+export interface VerificationResponse {
+  message: string;
+  developmentVerificationToken?: string;
 }
 
 export interface UserProfileResponse {
@@ -75,6 +86,14 @@ export interface RequestPasswordResetPayload {
 export interface ResetPasswordPayload {
   token: string;
   newPassword: string;
+}
+
+export interface VerifyEmailPayload {
+  token: string;
+}
+
+export interface RequestEmailVerificationPayload {
+  email: string;
 }
 
 export interface UpdateProfilePayload {

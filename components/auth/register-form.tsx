@@ -15,7 +15,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useAuthStore } from "@/lib/auth-store";
 import { getApiErrorMessage, registerUser } from "@/lib/api";
 import { registerSchema } from "@/lib/validators";
 
@@ -28,7 +27,6 @@ type RegisterValues = {
 
 export function RegisterForm() {
   const router = useRouter();
-  const setSession = useAuthStore((state) => state.setSession);
   const form = useForm<RegisterValues>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
@@ -48,8 +46,10 @@ export function RegisterForm() {
       });
     },
     onSuccess: (data) => {
-      setSession(data);
-      router.push("/dashboard");
+      const nextUrl = data.developmentVerificationToken
+        ? `/verify-email?token=${encodeURIComponent(data.developmentVerificationToken)}`
+        : "/verify-email";
+      router.push(nextUrl);
     },
   });
 
@@ -105,13 +105,23 @@ export function RegisterForm() {
             }
           />
           <p className="text-sm leading-6 text-[color:var(--foreground-muted)]">
-            Rejestracja od razu loguje uzytkownika i wpuszcza go do dashboardu.
+            Rejestracja tworzy konto w stanie oczekujacym. Po weryfikacji email aktywujesz logowanie.
           </p>
           <FormError
             message={
               mutation.isError ? getApiErrorMessage(mutation.error) : undefined
             }
           />
+          {mutation.isSuccess ? (
+            <div className="rounded-3xl bg-[color:var(--surface)] p-4 text-sm leading-6 text-[color:var(--foreground-muted)]">
+              <p>{mutation.data.message}</p>
+              {mutation.data.developmentVerificationToken ? (
+                <p className="mt-3 break-all font-semibold text-[color:var(--accent-strong)]">
+                  Token developerski: {mutation.data.developmentVerificationToken}
+                </p>
+              ) : null}
+            </div>
+          ) : null}
           <Button
             className="w-full"
             size="lg"
@@ -128,6 +138,15 @@ export function RegisterForm() {
             href="/login"
           >
             Przejdz do logowania
+          </Link>
+        </p>
+        <p className="mt-3 text-sm text-[color:var(--foreground-muted)]">
+          Potrzebujesz aktywacji?{" "}
+          <Link
+            className="font-semibold text-[color:var(--accent-strong)]"
+            href="/verify-email"
+          >
+            Otworz weryfikacje email
           </Link>
         </p>
       </CardContent>

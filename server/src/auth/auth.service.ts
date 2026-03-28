@@ -7,25 +7,34 @@ import {
 } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { JwtService } from "@nestjs/jwt";
-import { RefreshToken, User } from "@prisma/client";
+import { AccountStatus, RefreshToken, User } from "@prisma/client";
 import * as bcrypt from "bcrypt";
 import { createHash, randomBytes } from "crypto";
 import { PrismaService } from "../prisma/prisma.service";
 import { UsersService } from "../users/users.service";
-import { AuthResponse, AccessTokenPayload, RefreshTokenPayload } from "./auth.types";
+import {
+  AccessTokenPayload,
+  AuthResponse,
+  RefreshTokenPayload,
+  RegisterResponse,
+  VerificationResponse,
+} from "./auth.types";
 import { ttlToMilliseconds } from "./auth.utils";
 import { LoginDto } from "./dto/login.dto";
 import { LogoutDto } from "./dto/logout.dto";
 import { RefreshTokenDto } from "./dto/refresh-token.dto";
 import { RegisterDto } from "./dto/register.dto";
+import { RequestEmailVerificationDto } from "./dto/request-email-verification.dto";
 import { RequestPasswordResetDto } from "./dto/request-password-reset.dto";
 import { ResetPasswordDto } from "./dto/reset-password.dto";
+import { VerifyEmailDto } from "./dto/verify-email.dto";
 
 @Injectable()
 export class AuthService {
   private readonly accessTokenTtl: string;
   private readonly refreshTokenTtl: string;
   private readonly resetTokenTtlMinutes: number;
+  private readonly emailVerificationTokenTtlHours: number;
   private readonly accessTokenSecret: string;
   private readonly refreshTokenSecret: string;
 
@@ -44,13 +53,16 @@ export class AuthService {
     this.resetTokenTtlMinutes = Number(
       this.configService.get("RESET_TOKEN_TTL_MINUTES", "60"),
     );
+    this.emailVerificationTokenTtlHours = Number(
+      this.configService.get("EMAIL_VERIFICATION_TOKEN_TTL_HOURS", "24"),
+    );
     this.accessTokenSecret =
       this.configService.getOrThrow<string>("JWT_ACCESS_SECRET");
     this.refreshTokenSecret =
       this.configService.getOrThrow<string>("JWT_REFRESH_SECRET");
   }
 
-  async register(dto: RegisterDto): Promise<AuthResponse> {
+  async register(dto: RegisterDto): Promise<RegisterResponse> {
     const email = dto.email.trim().toLowerCase();
     const username = dto.username.trim();
 
@@ -72,9 +84,19 @@ export class AuthService {
       email,
       username,
       passwordHash,
+      status: AccountStatus.PENDING_APPROVAL,
+      emailVerified: false,
     });
 
-    return this.buildAuthResponse(user);
+    const verificationToken = await this.issueEmailVerificationToken(user.id);
+
+    return {
+      message:
+        "Konto zostalo utworzone. Zweryfikuj email, aby aktywowac konto.",
+      user: this.usersService.toPublicUser(user),
+      developmentVerificationToken:
+        process.env.NODE_ENV === "production" ? undefined : verificationToken,
+    };
   }
 
   async login(dto: LoginDto): Promise<AuthResponse> {
@@ -85,13 +107,99 @@ export class AuthService {
       throw new UnauthorizedException("Nieprawidlowy login lub haslo.");
     }
 
+    if (user.status === AccountStatus.BLOCKED) {
+      throw new UnauthorizedException("Konto jest zablokowane.");
+    }
+
+    if (!user.emailVerified || user.status !== AccountStatus.ACTIVE) {
+      throw new UnauthorizedException(
+        "Zweryfikuj email i aktywuj konto przed logowaniem.",
+      );
+    }
+
     const passwordMatches = await bcrypt.compare(dto.password, user.passwordHash);
 
     if (!passwordMatches) {
       throw new UnauthorizedException("Nieprawidlowy login lub haslo.");
     }
 
+    await this.usersService.touchLastSeen(user.id);
+
     return this.buildAuthResponse(user);
+  }
+
+  async requestEmailVerification(
+    dto: RequestEmailVerificationDto,
+  ): Promise<VerificationResponse> {
+    const email = dto.email.trim().toLowerCase();
+    const user = await this.usersService.findByEmail(email);
+
+    if (!user) {
+      return {
+        message:
+          "Jesli konto istnieje, wyslalismy nowa instrukcje weryfikacji email.",
+      };
+    }
+
+    if (user.emailVerified && user.status === AccountStatus.ACTIVE) {
+      return {
+        message: "To konto ma juz zweryfikowany adres email.",
+      };
+    }
+
+    const verificationToken = await this.issueEmailVerificationToken(user.id);
+
+    return {
+      message:
+        "Jesli konto istnieje, wyslalismy nowa instrukcje weryfikacji email.",
+      developmentVerificationToken:
+        process.env.NODE_ENV === "production" ? undefined : verificationToken,
+    };
+  }
+
+  async verifyEmail(dto: VerifyEmailDto): Promise<VerificationResponse> {
+    const tokenHash = this.hashToken(dto.token);
+    const verificationEntry =
+      await this.prisma.emailVerificationToken.findUnique({
+        where: { tokenHash },
+        include: { user: true },
+      });
+
+    if (
+      !verificationEntry ||
+      verificationEntry.usedAt ||
+      verificationEntry.expiresAt.getTime() <= Date.now()
+    ) {
+      throw new BadRequestException("Token weryfikacji email jest nieprawidlowy.");
+    }
+
+    const now = new Date();
+
+    await this.prisma.$transaction([
+      this.prisma.user.update({
+        where: { id: verificationEntry.userId },
+        data: {
+          emailVerified: true,
+          status: AccountStatus.ACTIVE,
+        },
+      }),
+      this.prisma.emailVerificationToken.update({
+        where: { id: verificationEntry.id },
+        data: { usedAt: now },
+      }),
+      this.prisma.emailVerificationToken.updateMany({
+        where: {
+          userId: verificationEntry.userId,
+          usedAt: null,
+          id: { not: verificationEntry.id },
+        },
+        data: { usedAt: now },
+      }),
+    ]);
+
+    return {
+      message: "Email zostal zweryfikowany. Mozesz sie teraz zalogowac.",
+    };
   }
 
   async refresh(dto: RefreshTokenDto): Promise<AuthResponse> {
@@ -230,6 +338,8 @@ export class AuthService {
       throw new UnauthorizedException("Sesja wygasla.");
     }
 
+    await this.usersService.touchLastSeen(user.id);
+
     return {
       user: this.usersService.toPublicUser(user),
     };
@@ -305,6 +415,10 @@ export class AuthService {
     if (!session.user.isActive) {
       throw new UnauthorizedException("Konto jest nieaktywne.");
     }
+
+    if (session.user.status === AccountStatus.BLOCKED) {
+      throw new UnauthorizedException("Konto jest zablokowane.");
+    }
   }
 
   private async verifyRefreshToken(refreshToken: string) {
@@ -322,5 +436,31 @@ export class AuthService {
 
   private hashToken(value: string) {
     return createHash("sha256").update(value).digest("hex");
+  }
+
+  private async issueEmailVerificationToken(userId: string) {
+    await this.prisma.emailVerificationToken.updateMany({
+      where: {
+        userId,
+        usedAt: null,
+      },
+      data: {
+        usedAt: new Date(),
+      },
+    });
+
+    const rawToken = randomBytes(32).toString("hex");
+
+    await this.prisma.emailVerificationToken.create({
+      data: {
+        tokenHash: this.hashToken(rawToken),
+        userId,
+        expiresAt: new Date(
+          Date.now() + this.emailVerificationTokenTtlHours * 3_600_000,
+        ),
+      },
+    });
+
+    return rawToken;
   }
 }

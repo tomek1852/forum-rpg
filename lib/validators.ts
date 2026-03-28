@@ -33,6 +33,14 @@ export const resetPasswordSchema = z.object({
   newPassword: z.string().min(8, "Haslo musi miec co najmniej 8 znakow."),
 });
 
+export const verifyEmailSchema = z.object({
+  token: z.string().min(16, "Wklej poprawny token weryfikacji."),
+});
+
+export const requestEmailVerificationSchema = z.object({
+  email: z.email("Wpisz poprawny adres email."),
+});
+
 export const profileSchema = z.object({
   displayName: z
     .string()

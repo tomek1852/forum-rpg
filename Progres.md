@@ -17,3 +17,11 @@
 - Zaimplementowano frontend dla profilu gracza i postaci: `profile/[userId]`, `character/new`, `character/[charId]`, `character/[charId]/edit`, a dashboard pokazuje teraz wlasne postacie.
 - Dodano testy backendowe dla modulu postaci oraz utrzymano zielone linty, testy i buildy dla `web` i `api`.
 - Zweryfikowano iteracje poleceniami: `npm --prefix server run prisma:generate`, `npm --prefix server run test`, `npm --prefix server run build`, `npm run lint`, `npm run test:web`, `npm run build:web`.
+
+## 2026-03-28 - ETAP 1 - weryfikacja email i aktywacja kont - IN PROGRESS
+
+- Dodano model `EmailVerificationToken` oraz migracje pod flow aktywacji konta po rejestracji.
+- Przebudowano auth: rejestracja tworzy konto w `PENDING_APPROVAL`, logowanie blokuje konta niezweryfikowane i zablokowane, a endpointy `request-email-verification` i `verify-email` obsluguja aktywacje.
+- Dodano frontendowy ekran `verify-email` oraz dostosowano formularze `register` i `login` do nowego przeplywu aktywacji.
+- Utrzymano zielone: `npm --prefix server run test`, `npm --prefix server run build`, `npm run lint`, `npm run test:web`, `npm run build:web`.
+- Uwaga operacyjna: `npm --prefix server run prisma:generate` moze na Windows zwrocic `EPERM` gdy aktywny proces Node blokuje plik `query_engine-windows.dll.node`; w takim przypadku trzeba zatrzymac dzialajacy backend i ponowic komende.

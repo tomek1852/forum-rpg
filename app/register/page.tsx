@@ -5,7 +5,7 @@ export default function RegisterPage() {
   return (
     <AuthShell
       title="Otworz swoje konto gracza"
-      description="Rejestracja od razu buduje sesje, dzieki czemu po zapisaniu formularza trafiasz prosto do panelu."
+      description="Po rejestracji konto czeka na weryfikacje email. Dopiero aktywne konto wpuszcza do panelu gracza."
     >
       <RegisterForm />
     </AuthShell>

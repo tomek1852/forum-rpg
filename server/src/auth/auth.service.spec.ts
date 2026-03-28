@@ -1,7 +1,7 @@
 import { ConflictException, UnauthorizedException } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { JwtService } from "@nestjs/jwt";
-import { UserRole } from "@prisma/client";
+import { AccountStatus, UserRole } from "@prisma/client";
 import { AuthService } from "./auth.service";
 
 jest.mock("bcrypt", () => ({
@@ -20,14 +20,33 @@ describe("AuthService", () => {
     username: "hero",
     passwordHash: "db-hash",
     role: UserRole.PLAYER,
+    status: AccountStatus.ACTIVE,
     isActive: true,
+    emailVerified: true,
+    displayName: null,
+    bio: null,
+    avatarUrl: null,
+    lastSeenAt: null,
     createdAt: new Date(),
     updatedAt: new Date(),
+  };
+
+  const pendingUser = {
+    ...user,
+    status: AccountStatus.PENDING_APPROVAL,
+    emailVerified: false,
   };
 
   const prisma = {
     user: {
       findFirst: jest.fn(),
+      update: jest.fn(),
+    },
+    emailVerificationToken: {
+      create: jest.fn(),
+      updateMany: jest.fn(),
+      findUnique: jest.fn(),
+      update: jest.fn(),
     },
     refreshToken: {
       create: jest.fn().mockResolvedValue({
@@ -42,12 +61,20 @@ describe("AuthService", () => {
 
   const usersService = {
     createUser: jest.fn().mockResolvedValue(user),
+    findByEmail: jest.fn(),
     findByEmailOrUsername: jest.fn(),
+    touchLastSeen: jest.fn(),
     toPublicUser: jest.fn().mockReturnValue({
       id: user.id,
       email: user.email,
       username: user.username,
+      displayName: user.displayName,
+      bio: user.bio,
+      avatarUrl: user.avatarUrl,
       role: user.role,
+      status: user.status,
+      emailVerified: user.emailVerified,
+      lastSeenAt: user.lastSeenAt,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
     }),
@@ -75,14 +102,29 @@ describe("AuthService", () => {
       tokenHash: "placeholder",
       expiresAt: new Date(),
     });
+    prisma.user.update.mockResolvedValue(user);
+    prisma.emailVerificationToken.create.mockResolvedValue({
+      id: "verify-1",
+      userId: "user-1",
+      tokenHash: "hashed",
+      expiresAt: new Date(),
+    });
     prisma.user.findFirst.mockResolvedValue(null);
     usersService.findByEmailOrUsername.mockResolvedValue(user);
     usersService.createUser.mockResolvedValue(user);
+    usersService.findByEmail.mockResolvedValue(user);
+    usersService.touchLastSeen.mockResolvedValue(user);
     usersService.toPublicUser.mockReturnValue({
       id: user.id,
       email: user.email,
       username: user.username,
+      displayName: user.displayName,
+      bio: user.bio,
+      avatarUrl: user.avatarUrl,
       role: user.role,
+      status: user.status,
+      emailVerified: user.emailVerified,
+      lastSeenAt: user.lastSeenAt,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
     });
@@ -98,7 +140,9 @@ describe("AuthService", () => {
     );
   });
 
-  it("registers a new user and returns tokens", async () => {
+  it("registers a new user and returns verification instructions", async () => {
+    usersService.createUser.mockResolvedValueOnce(pendingUser);
+
     const result = await service.register({
       email: "test@example.com",
       username: "hero",
@@ -106,7 +150,8 @@ describe("AuthService", () => {
     });
 
     expect(usersService.createUser).toHaveBeenCalled();
-    expect(result.tokens.accessToken).toBe("access-token");
+    expect(prisma.emailVerificationToken.create).toHaveBeenCalled();
+    expect(result.message).toContain("Zweryfikuj email");
     expect(result.user.username).toBe("hero");
   });
 
@@ -131,5 +176,36 @@ describe("AuthService", () => {
         password: "badpass123",
       }),
     ).rejects.toBeInstanceOf(UnauthorizedException);
+  });
+
+  it("blocks login for accounts pending verification", async () => {
+    usersService.findByEmailOrUsername.mockResolvedValueOnce(pendingUser);
+
+    await expect(
+      service.login({
+        identifier: "test@example.com",
+        password: "supersecret",
+      }),
+    ).rejects.toThrow("Zweryfikuj email");
+  });
+
+  it("verifies email token and activates account", async () => {
+    prisma.emailVerificationToken.findUnique.mockResolvedValueOnce({
+      id: "verify-1",
+      userId: "user-1",
+      tokenHash: "hashed",
+      expiresAt: new Date(Date.now() + 60_000),
+      usedAt: null,
+      createdAt: new Date(),
+      user,
+    });
+    prisma.$transaction = jest.fn().mockResolvedValue([]);
+
+    const result = await service.verifyEmail({
+      token: "raw-token",
+    });
+
+    expect(prisma.$transaction).toHaveBeenCalled();
+    expect(result.message).toContain("Mozesz sie teraz zalogowac");
   });
 });

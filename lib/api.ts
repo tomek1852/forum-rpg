@@ -8,6 +8,12 @@ import type {
   CharacterResponse,
   CharactersResponse,
   CurrentUserResponse,
+  ForumCategoriesResponse,
+  ForumCategoryResponse,
+  ForumPostResponse,
+  ForumReplyPayload,
+  ForumThreadPayload,
+  ForumThreadResponse,
   LoginPayload,
   RegisterResponse,
   RegisterPayload,
@@ -202,6 +208,42 @@ export async function updateCharacter(
 ) {
   const { data } = await api.patch<CharacterResponse>(
     `/characters/${characterId}`,
+    payload,
+  );
+  return data;
+}
+
+export async function getForumCategories() {
+  const { data } = await api.get<ForumCategoriesResponse>("/forum/categories");
+  return data;
+}
+
+export async function getForumCategory(categoryId: string) {
+  const { data } = await api.get<ForumCategoryResponse>(
+    `/forum/categories/${categoryId}`,
+  );
+  return data;
+}
+
+export async function getForumThread(threadId: string) {
+  const { data } = await api.get<ForumThreadResponse>(`/forum/threads/${threadId}`);
+  return data;
+}
+
+export async function createForumThread(payload: ForumThreadPayload) {
+  const { data } = await api.post<{ thread: ForumThreadResponse["thread"] }>(
+    "/forum/threads",
+    payload,
+  );
+  return data;
+}
+
+export async function createForumPost(
+  threadId: string,
+  payload: ForumReplyPayload,
+) {
+  const { data } = await api.post<ForumPostResponse>(
+    `/forum/threads/${threadId}/posts`,
     payload,
   );
   return data;

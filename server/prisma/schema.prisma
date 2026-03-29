@@ -38,6 +38,8 @@ model User {
   passwordResetTokens PasswordResetToken[]
   emailVerificationTokens EmailVerificationToken[]
   characters          Character[]
+  forumThreads        ForumThread[]        @relation("ForumThreadAuthor")
+  forumPosts          ForumPost[]          @relation("ForumPostAuthor")
 }
 
 model RefreshToken {
@@ -92,4 +94,53 @@ model Character {
   owner       User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
 
   @@index([ownerId])
+}
+
+model ForumCategory {
+  id          String       @id @default(uuid())
+  title       String
+  description String?
+  color       String?
+  position    Int          @default(0)
+  isArchived  Boolean      @default(false)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  threads     ForumThread[]
+}
+
+model ForumThread {
+  id         String        @id @default(uuid())
+  title      String
+  isPinned   Boolean       @default(false)
+  isLocked   Boolean       @default(false)
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+  lastPostAt DateTime      @default(now())
+  categoryId String
+  authorId   String
+  category   ForumCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  author     User          @relation("ForumThreadAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  posts      ForumPost[]
+
+  @@index([categoryId, lastPostAt])
+  @@index([authorId])
+}
+
+model ForumPost {
+  id          String      @id @default(uuid())
+  content     String
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  editedAt    DateTime?
+  threadId    String
+  authorId    String
+  quotePostId String?
+  thread      ForumThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  author      User        @relation("ForumPostAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  quotePost   ForumPost?  @relation("ForumPostQuote", fields: [quotePostId], references: [id], onDelete: SetNull)
+  quotedIn    ForumPost[] @relation("ForumPostQuote")
+
+  @@index([threadId, createdAt])
+  @@index([authorId])
+  @@index([quotePostId])
 }

@@ -84,3 +84,23 @@ export const characterSchema = z.object({
     .or(z.literal("")),
   isPublic: z.boolean().default(true),
 });
+
+export const forumThreadSchema = z.object({
+  categoryId: z.uuid("Wybierz poprawna kategorie forum."),
+  title: z
+    .string()
+    .min(4, "Tytul watku musi miec co najmniej 4 znaki.")
+    .max(120, "Tytul watku moze miec maksymalnie 120 znakow."),
+  content: z
+    .string()
+    .min(8, "Pierwszy post musi miec co najmniej 8 znakow.")
+    .max(10000, "Post jest za dlugi."),
+});
+
+export const forumReplySchema = z.object({
+  content: z
+    .string()
+    .min(1, "Wpisz tresc odpowiedzi.")
+    .max(10000, "Odpowiedz jest za dluga."),
+  quotePostId: z.uuid("Wybrany cytat jest niepoprawny.").optional(),
+});

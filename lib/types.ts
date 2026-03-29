@@ -68,6 +68,92 @@ export interface CharactersResponse {
   characters: Character[];
 }
 
+export interface ForumAuthor {
+  id: string;
+  username: string;
+  displayName: string | null;
+  avatarUrl: string | null;
+  role: Role;
+}
+
+export interface ForumCategory {
+  id: string;
+  title: string;
+  description: string | null;
+  color: string | null;
+  position: number;
+  threadCount: number;
+  latestThread: {
+    id: string;
+    categoryId: string;
+    title: string;
+    lastPostAt: string;
+    postCount: number;
+    author: ForumAuthor;
+  } | null;
+}
+
+export interface ForumThreadSummary {
+  id: string;
+  categoryId: string;
+  title: string;
+  isPinned: boolean;
+  isLocked: boolean;
+  createdAt: string;
+  updatedAt: string;
+  lastPostAt: string;
+  postCount: number;
+  excerpt: string | null;
+  author: ForumAuthor;
+}
+
+export interface ForumThread {
+  id: string;
+  categoryId: string;
+  title: string;
+  isPinned: boolean;
+  isLocked: boolean;
+  createdAt: string;
+  updatedAt: string;
+  lastPostAt: string;
+  postCount: number;
+  author: ForumAuthor;
+}
+
+export interface ForumPost {
+  id: string;
+  content: string;
+  createdAt: string;
+  updatedAt: string;
+  editedAt: string | null;
+  author: ForumAuthor;
+  quotePost: {
+    id: string;
+    content: string;
+    createdAt: string;
+    author: ForumAuthor;
+  } | null;
+}
+
+export interface ForumCategoriesResponse {
+  categories: ForumCategory[];
+}
+
+export interface ForumCategoryResponse {
+  category: Omit<ForumCategory, "latestThread">;
+  threads: ForumThreadSummary[];
+}
+
+export interface ForumThreadResponse {
+  category: Pick<ForumCategory, "id" | "title" | "description" | "color">;
+  thread: ForumThread;
+  posts: ForumPost[];
+}
+
+export interface ForumPostResponse {
+  post: ForumPost;
+}
+
 export interface LoginPayload {
   identifier: string;
   password: string;
@@ -111,4 +197,15 @@ export interface CharacterPayload {
   avatarUrl?: string;
   statsJson?: Record<string, string | number>;
   isPublic?: boolean;
+}
+
+export interface ForumThreadPayload {
+  categoryId: string;
+  title: string;
+  content: string;
+}
+
+export interface ForumReplyPayload {
+  content: string;
+  quotePostId?: string;
 }

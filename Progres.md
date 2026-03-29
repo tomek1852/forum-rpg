@@ -25,3 +25,12 @@
 - Dodano frontendowy ekran `verify-email` oraz dostosowano formularze `register` i `login` do nowego przeplywu aktywacji.
 - Utrzymano zielone: `npm --prefix server run test`, `npm --prefix server run build`, `npm run lint`, `npm run test:web`, `npm run build:web`.
 - Uwaga operacyjna: `npm --prefix server run prisma:generate` moze na Windows zwrocic `EPERM` gdy aktywny proces Node blokuje plik `query_engine-windows.dll.node`; w takim przypadku trzeba zatrzymac dzialajacy backend i ponowic komende.
+
+## 2026-03-29 - ETAP 1 - forum, watki i posty - IN PROGRESS
+
+- Dodano modele `ForumCategory`, `ForumThread` i `ForumPost` wraz z migracja `202603291030_forum_mvp`, relacjami do uzytkownika i wsparciem cytowania postow.
+- Przygotowano backend forum w NestJS: endpointy do listy kategorii, widoku kategorii, szczegolow watku, zakladania nowych watkow i odpowiadania w watkach.
+- Dodano domyslne kategorie forum po migracji, aby lokalne srodowisko bylo od razu gotowe do testowania bez recznego seedowania.
+- Zaimplementowano frontendowe widoki `forum`, `forum/[categoryId]`, `forum/[categoryId]/[threadId]` i `forum/new` z React Query, formularzem nowego watku oraz odpowiedziami z cytowaniem.
+- Dashboard dostal bezposredni skrot do forum, a wpisy i watki wyswietlaja autora, aktywnosc i podstawowe statusy watku.
+- Zweryfikowano iteracje poleceniami: `npm --prefix server run prisma:migrate:dev`, `npm --prefix server run prisma:generate`, `npm --prefix server run test`, `npm --prefix server run build`, `npm run lint`, `npm run test:web`, `npm run build:web`.

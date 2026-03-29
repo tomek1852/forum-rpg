@@ -117,6 +117,9 @@ export function DashboardShell() {
               </div>
             </div>
             <div className="flex flex-wrap gap-3">
+              <Button asChild size="lg" variant="secondary">
+                <Link href="/forum">Forum</Link>
+              </Button>
               {profile ? (
                 <Button asChild size="lg">
                   <Link href={`/profile/${profile.id}`}>Moj profil</Link>

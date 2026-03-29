@@ -5,7 +5,7 @@ export default function LoginPage() {
   return (
     <AuthShell
       title="Wroc do opowiesci"
-      description="Zaloguj sie, odzyskaj dostep do dashboardu i przygotuj konto pod nastepne etapy rozgrywki."
+      description="Zaloguj sie i wroc do swojego panelu gracza."
     >
       <LoginForm />
     </AuthShell>

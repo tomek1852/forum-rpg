@@ -18,7 +18,7 @@ export function AuthShell({
         <div className="absolute inset-x-0 top-0 h-56 bg-[radial-gradient(circle_at_top,_rgba(229,155,82,0.28),_transparent_62%)]" />
         <div className="relative z-10 flex h-full flex-col justify-between">
           <div className="space-y-6">
-            <Badge>Faza 1 / MVP Core</Badge>
+            <Badge>Forum RPG</Badge>
             <div className="space-y-4">
               <h1 className="max-w-xl font-display text-5xl leading-tight text-[color:var(--foreground)] sm:text-6xl">
                 {title}
@@ -32,17 +32,17 @@ export function AuthShell({
             <FeatureTile
               icon={<ShieldCheck className="size-5" />}
               title="Bezpieczne logowanie"
-              text="JWT, refresh tokeny i hasla haszowane bcryptem."
+              text="Konto gracza jest chronione i gotowe do codziennego korzystania."
             />
             <FeatureTile
               icon={<Users className="size-5" />}
               title="Role od startu"
-              text="Gracz i admin sa gotowi pod kolejne fazy systemu."
+              text="Panel rozroznia uprawnienia i porzadkuje dostep do waznych obszarow."
             />
             <FeatureTile
               icon={<Sword className="size-5" />}
-              title="Forum-ready foundation"
-              text="Architektura przygotowana pod postacie, watki i eventy."
+              title="Miejsce na rozwoj"
+              text="To dobry fundament pod postacie, watki i dalsze elementy rozgrywki."
             />
           </div>
         </div>

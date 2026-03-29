@@ -112,8 +112,7 @@ export function DashboardShell() {
                   Witaj, {profile?.username ?? "Graczu"}
                 </h1>
                 <p className="mt-3 max-w-2xl text-lg leading-8 text-[color:var(--foreground-muted)]">
-                  Auth stoi stabilnie, a ten etap rozwija teraz profil gracza i
-                  zarzadzanie postaciami jako kolejny fragment rozszerzonego MVP.
+                  Tu zarzadzisz swoim kontem, przejdziesz do profilu i przygotujesz postacie do dalszej rozgrywki.
                 </p>
               </div>
             </div>
@@ -143,39 +142,38 @@ export function DashboardShell() {
           <InfoCard
             title="Rola"
             value={profile?.role ?? "PLAYER"}
-            description="Model jest przygotowany pod gracza i administratora."
+            description="Panel pokazuje Twoje aktualne uprawnienia w serwisie."
           />
           <InfoCard
-            title="Nastepny krok"
+            title="Dalej"
             value="Postacie"
-            description="Ten dashboard prowadzi teraz bezposrednio do profilu i kart postaci."
+            description="Z tego miejsca przejdziesz prosto do profilu i swoich kart postaci."
           />
         </section>
         <section className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
           <Card>
             <CardHeader>
-              <CardTitle>To konto jest gotowe na dalsze fazy</CardTitle>
+              <CardTitle>To konto jest gotowe do gry</CardTitle>
               <CardDescription>
-                Dane sesji sa trzymane w Zustand, zapytania obsluguje React
-                Query, a backend waliduje dostep JWT.
+                Najwazniejsze elementy dostepu do konta dzialaja i sa gotowe do testowania.
               </CardDescription>
             </CardHeader>
             <CardContent className="grid gap-4 md:grid-cols-2">
               <ChecklistItem
                 title="Rejestracja"
-                description="Nowe konto tworzy profil uzytkownika i od razu zwraca tokeny."
+                description="Nowe konto prowadzi przez podstawowy proces wejscia do serwisu."
               />
               <ChecklistItem
                 title="Logowanie"
-                description="Dziala dla emaila albo nazwy uzytkownika."
+                description="Do panelu wejdziesz po swoich danych konta."
               />
               <ChecklistItem
                 title="Reset hasla"
-                description="Mock token zwracany w dev nie blokuje testow bez skrzynki mailowej."
+                description="Mozesz odzyskac dostep do konta, gdy zapomnisz hasla."
               />
               <ChecklistItem
                 title="Refresh sesji"
-                description="Interceptor odswieza access token po wygasnieciu."
+                description="Sesja utrzymuje dostep do panelu bez zbednego przerywania pracy."
               />
             </CardContent>
           </Card>
@@ -208,7 +206,7 @@ export function DashboardShell() {
                 <div>
                   <CardTitle>Moje postacie</CardTitle>
                   <CardDescription>
-                    Moduly profilu i postaci sa juz podpiete do API oraz bazy danych.
+                    Tutaj zobaczysz swoje karty i szybko przejdziesz do ich edycji.
                   </CardDescription>
                 </div>
                 <Button asChild variant="secondary">

@@ -5,7 +5,7 @@ export default function ResetPasswordPage() {
   return (
     <AuthShell
       title="Przywroc dostep do konta"
-      description="Faza 1 zawiera pelny obieg resetu hasla z developerskim tokenem do szybkiego testowania."
+      description="Ustaw nowe haslo i odzyskaj dostep do swojego konta."
     >
       <ResetPasswordPanel />
     </AuthShell>

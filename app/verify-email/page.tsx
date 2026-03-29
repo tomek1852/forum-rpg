@@ -6,7 +6,7 @@ export default function VerifyEmailPage() {
   return (
     <AuthShell
       title="Aktywuj konto przed pierwsza sesja"
-      description="Ten etap rejestracji konczy sie dopiero po weryfikacji email. W dev mozesz uzyc tokenu wyswietlonego po rejestracji."
+      description="Potwierdz adres email, aby aktywowac konto i wejsc do panelu."
     >
       <Suspense fallback={<div className="text-sm text-[color:var(--foreground-muted)]">Ladowanie weryfikacji...</div>}>
         <VerifyEmailPanel />

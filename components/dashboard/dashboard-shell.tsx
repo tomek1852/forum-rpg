@@ -133,50 +133,7 @@ export function DashboardShell() {
             </div>
           </div>
         </header>
-        <section className="grid gap-6 lg:grid-cols-3">
-          <InfoCard
-            title="Status sesji"
-            value="Aktywny"
-            description="Chroniony endpoint /auth/me potwierdza dostep do panelu."
-          />
-          <InfoCard
-            title="Rola"
-            value={profile?.role ?? "PLAYER"}
-            description="Panel pokazuje Twoje aktualne uprawnienia w serwisie."
-          />
-          <InfoCard
-            title="Dalej"
-            value="Postacie"
-            description="Z tego miejsca przejdziesz prosto do profilu i swoich kart postaci."
-          />
-        </section>
         <section className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-          <Card>
-            <CardHeader>
-              <CardTitle>To konto jest gotowe do gry</CardTitle>
-              <CardDescription>
-                Najwazniejsze elementy dostepu do konta dzialaja i sa gotowe do testowania.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="grid gap-4 md:grid-cols-2">
-              <ChecklistItem
-                title="Rejestracja"
-                description="Nowe konto prowadzi przez podstawowy proces wejscia do serwisu."
-              />
-              <ChecklistItem
-                title="Logowanie"
-                description="Do panelu wejdziesz po swoich danych konta."
-              />
-              <ChecklistItem
-                title="Reset hasla"
-                description="Mozesz odzyskac dostep do konta, gdy zapomnisz hasla."
-              />
-              <ChecklistItem
-                title="Refresh sesji"
-                description="Sesja utrzymuje dostep do panelu bez zbednego przerywania pracy."
-              />
-            </CardContent>
-          </Card>
           <Card>
             <CardHeader>
               <CardTitle>Profil gracza</CardTitle>
@@ -235,49 +192,6 @@ export function DashboardShell() {
           </p>
         ) : null}
       </div>
-    </div>
-  );
-}
-
-function InfoCard({
-  title,
-  value,
-  description,
-}: {
-  title: string;
-  value: string;
-  description: string;
-}) {
-  return (
-    <Card>
-      <CardHeader>
-        <CardDescription>{title}</CardDescription>
-        <CardTitle className="text-4xl">{value}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <p className="text-sm leading-6 text-[color:var(--foreground-muted)]">
-          {description}
-        </p>
-      </CardContent>
-    </Card>
-  );
-}
-
-function ChecklistItem({
-  title,
-  description,
-}: {
-  title: string;
-  description: string;
-}) {
-  return (
-    <div className="rounded-[24px] bg-[color:var(--surface)] p-5">
-      <h3 className="text-lg font-semibold text-[color:var(--foreground)]">
-        {title}
-      </h3>
-      <p className="mt-2 text-sm leading-6 text-[color:var(--foreground-muted)]">
-        {description}
-      </p>
     </div>
   );
 }

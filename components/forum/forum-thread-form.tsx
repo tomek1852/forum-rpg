@@ -95,9 +95,9 @@ export function ForumThreadForm({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Nowy watek</CardTitle>
+        <CardTitle>Nowy wątek</CardTitle>
         <CardDescription>
-          Wybierz kategorie, nadaj tytul i rozpocznij scene pierwszym postem.
+          Wybierz kategorię, nadaj tytuł i rozpocznij scenę pierwszym postem.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -110,7 +110,7 @@ export function ForumThreadForm({
               className="flex h-12 w-full rounded-2xl border border-[color:var(--border)] bg-white px-4 text-sm text-[color:var(--foreground)] outline-none transition focus:border-[color:var(--accent)]"
               {...form.register("categoryId")}
             >
-              <option value="">Wybierz kategorie</option>
+              <option value="">Wybierz kategorię</option>
               {categoriesQuery.data?.categories.map((category) => (
                 <option key={category.id} value={category.id}>
                   {category.title}
@@ -118,7 +118,7 @@ export function ForumThreadForm({
               ))}
             </select>
           </Field>
-          <Field label="Tytul watku" error={form.formState.errors.title?.message}>
+          <Field label="Tytuł wątku" error={form.formState.errors.title?.message}>
             <Input {...form.register("title")} />
           </Field>
           <Field label="Pierwszy post" error={form.formState.errors.content?.message}>
@@ -127,7 +127,7 @@ export function ForumThreadForm({
           <FormError message={mutation.isError ? getApiErrorMessage(mutation.error) : undefined} />
           <div className="flex flex-wrap gap-3">
             <Button size="lg" type="submit" disabled={mutation.isPending}>
-              {mutation.isPending ? "Zapisywanie..." : "Utworz watek"}
+              {mutation.isPending ? "Zapisywanie..." : "Utwórz wątek"}
             </Button>
             <Button asChild size="lg" type="button" variant="secondary">
               <Link href={selectedCategoryId ? `/forum/${selectedCategoryId}` : "/forum"}>

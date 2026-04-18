@@ -69,21 +69,21 @@ export function ResetPasswordPanel() {
     <div className="grid w-full max-w-5xl gap-6 lg:grid-cols-2">
       <Card>
         <CardHeader>
-          <CardTitle>Popros o reset</CardTitle>
+          <CardTitle>Poproś o reset</CardTitle>
           <CardDescription>
-            Na potrzeby MVP backend moze zwrocic token resetu, zeby nie blokowac
-            testow bez emaila.
+            Na potrzeby MVP backend może zwrócić token resetu, żeby nie blokować
+            testów bez e-maila.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form
             className="space-y-5"
             onSubmit={requestForm.handleSubmit((values) =>
-              requestMutation.mutate(values),
+              requestMutation.mutate(values)
             )}
           >
             <div>
-              <Label htmlFor="reset-email">Email</Label>
+              <Label htmlFor="reset-email">E-mail</Label>
               <Input
                 id="reset-email"
                 type="email"
@@ -104,7 +104,7 @@ export function ResetPasswordPanel() {
               type="submit"
               disabled={requestMutation.isPending}
             >
-              {requestMutation.isPending ? "Wysylanie..." : "Wyslij link resetu"}
+              {requestMutation.isPending ? "Wysyłanie..." : "Wyślij link resetu"}
             </Button>
           </form>
           {requestMutation.isSuccess ? (
@@ -121,16 +121,16 @@ export function ResetPasswordPanel() {
       </Card>
       <Card>
         <CardHeader>
-          <CardTitle>Ustaw nowe haslo</CardTitle>
+          <CardTitle>Ustaw nowe hasło</CardTitle>
           <CardDescription>
-            Wklej token i nadaj nowe haslo. Po zmianie stare sesje sa wygaszane.
+            Wklej token i nadaj nowe hasło. Po zmianie stare sesje są wygaszane.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form
             className="space-y-5"
             onSubmit={resetForm.handleSubmit((values) =>
-              resetMutation.mutate(values),
+              resetMutation.mutate(values)
             )}
           >
             <div>
@@ -139,7 +139,7 @@ export function ResetPasswordPanel() {
               <FormError message={resetForm.formState.errors.token?.message} />
             </div>
             <div>
-              <Label htmlFor="new-password">Nowe haslo</Label>
+              <Label htmlFor="new-password">Nowe hasło</Label>
               <Input
                 id="new-password"
                 type="password"
@@ -162,7 +162,7 @@ export function ResetPasswordPanel() {
               type="submit"
               disabled={resetMutation.isPending}
             >
-              {resetMutation.isPending ? "Zapisywanie..." : "Zmien haslo"}
+              {resetMutation.isPending ? "Zapisywanie..." : "Zmień hasło"}
             </Button>
           </form>
           {resetMutation.isSuccess ? (

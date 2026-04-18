@@ -41,7 +41,7 @@ export function ProfileForm({ user }: { user: User }) {
       onSubmit={form.handleSubmit((values) => mutation.mutate(values))}
     >
       <div>
-        <Label htmlFor="displayName">Nazwa wyswietlana</Label>
+        <Label htmlFor="displayName">Nazwa wyświetlana</Label>
         <Input id="displayName" {...form.register("displayName")} />
         <FieldError message={form.formState.errors.displayName?.message} />
       </div>

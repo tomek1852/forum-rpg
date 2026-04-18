@@ -82,7 +82,7 @@ export function NotificationsShell() {
                   Twoje aktualizacje
                 </h1>
                 <p className="mt-3 max-w-3xl text-lg leading-8 text-[color:var(--foreground-muted)]">
-                  Tutaj zobaczysz odpowiedzi, cytaty i podstawowe sygnaly z forum.
+                  Tutaj zobaczysz odpowiedzi, cytaty i podstawowe sygnały z forum.
                 </p>
               </div>
             </div>
@@ -106,7 +106,7 @@ export function NotificationsShell() {
           <CardHeader>
             <CardTitle>Nieprzeczytane</CardTitle>
             <CardDescription>
-              {query.data?.unreadCount ?? 0} nowych powiadomien czeka na Twoja uwage.
+              {query.data?.unreadCount ?? 0} nowych powiadomień czeka na Twoją uwagę.
             </CardDescription>
           </CardHeader>
         </Card>
@@ -150,7 +150,7 @@ export function NotificationsShell() {
                   </p>
                   {notification.link ? (
                     <Button asChild variant="secondary">
-                      <Link href={notification.link}>Otworz</Link>
+                      <Link href={notification.link}>Otwórz</Link>
                     </Button>
                   ) : null}
                 </CardContent>
@@ -159,8 +159,8 @@ export function NotificationsShell() {
           ) : (
             <Card>
               <CardContent className="py-10 text-sm leading-7 text-[color:var(--foreground-muted)]">
-                Nie masz jeszcze zadnych powiadomien. Gdy ktos odpowie w Twoim
-                watku albo zacytuje post, zobaczysz to tutaj.
+                Nie masz jeszcze żadnych powiadomień. Gdy ktoś odpowie w Twoim
+                wątku albo zacytuje post, zobaczysz to tutaj.
               </CardContent>
             </Card>
           )}
@@ -180,9 +180,9 @@ function formatNotificationDate(value: string) {
 function translateNotificationType(type: string) {
   switch (type) {
     case "FORUM_NEW_THREAD":
-      return "Nowy watek";
+      return "Nowy wątek";
     case "FORUM_THREAD_REPLY":
-      return "Odpowiedz";
+      return "Odpowiedź";
     case "FORUM_POST_QUOTE":
       return "Cytat";
     default:

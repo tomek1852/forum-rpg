@@ -4,8 +4,8 @@ import { RegisterForm } from "@/components/auth/register-form";
 export default function RegisterPage() {
   return (
     <AuthShell
-      title="Otworz swoje konto gracza"
-      description="Po rejestracji konto czeka na weryfikacje email. Dopiero aktywne konto wpuszcza do panelu gracza."
+      title="Otwórz swoje konto gracza"
+      description="Po rejestracji konto czeka na weryfikację e-mail. Dopiero aktywne konto wpuszcza do panelu gracza."
     >
       <RegisterForm />
     </AuthShell>

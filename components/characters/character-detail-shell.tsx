@@ -44,13 +44,13 @@ export function CharacterDetailShell({ characterId }: { characterId: string }) {
         <header className="rounded-[36px] border border-[color:var(--border)] bg-[color:var(--hero)] p-8 shadow-[0_18px_70px_rgba(84,53,29,0.16)]">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div className="space-y-4">
-              <Badge>{character.isPublic ? "Postac publiczna" : "Postac prywatna"}</Badge>
+              <Badge>{character.isPublic ? "Postać publiczna" : "Postać prywatna"}</Badge>
               <div>
                 <h1 className="font-display text-5xl text-[color:var(--foreground)]">
                   {character.name}
                 </h1>
                 <p className="mt-2 text-lg text-[color:var(--foreground-muted)]">
-                  {character.title ?? "Brak tytulu lub roli."}
+                  {character.title ?? "Brak tytułu lub roli."}
                 </p>
               </div>
             </div>
@@ -70,19 +70,19 @@ export function CharacterDetailShell({ characterId }: { characterId: string }) {
           <Card>
             <CardHeader>
               <CardTitle>Opis postaci</CardTitle>
-              <CardDescription>{character.summary ?? "Brak skrotu opisu."}</CardDescription>
+              <CardDescription>{character.summary ?? "Brak skrótu opisu."}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-5">
               <section>
                 <h2 className="text-lg font-semibold text-[color:var(--foreground)]">Biografia</h2>
                 <p className="mt-2 whitespace-pre-wrap text-sm leading-7 text-[color:var(--foreground-muted)]">
-                  {character.biography ?? "Biografia nie zostala jeszcze uzupelniona."}
+                  {character.biography ?? "Biografia nie została jeszcze uzupełniona."}
                 </p>
               </section>
               <section>
-                <h2 className="text-lg font-semibold text-[color:var(--foreground)]">Wyglad</h2>
+                <h2 className="text-lg font-semibold text-[color:var(--foreground)]">Wygląd</h2>
                 <p className="mt-2 whitespace-pre-wrap text-sm leading-7 text-[color:var(--foreground-muted)]">
-                  {character.appearance ?? "Opis wygladu nie zostal jeszcze uzupelniony."}
+                  {character.appearance ?? "Opis wyglądu nie został jeszcze uzupełniony."}
                 </p>
               </section>
             </CardContent>
@@ -109,7 +109,7 @@ export function CharacterDetailShell({ characterId }: { characterId: string }) {
                 ))
               ) : (
                 <p className="text-sm text-[color:var(--foreground-muted)]">
-                  Ta postac nie ma jeszcze zapisanych statystyk.
+                  Ta postać nie ma jeszcze zapisanych statystyk.
                 </p>
               )}
             </CardContent>

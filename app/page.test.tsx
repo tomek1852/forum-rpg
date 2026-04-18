@@ -6,10 +6,10 @@ describe("Home", () => {
     render(<Home />);
 
     expect(
-      screen.getByRole("link", { name: /zaloz konto/i }),
+      screen.getByRole("link", { name: /załóż konto/i }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("link", { name: /zaloguj sie/i }),
+      screen.getByRole("link", { name: /zaloguj się/i }),
     ).toBeInTheDocument();
   });
 });

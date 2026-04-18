@@ -44,7 +44,7 @@ export function LoginForm() {
       <CardHeader>
         <CardTitle>Logowanie</CardTitle>
         <CardDescription>
-          Wejdz do panelu gracza, aby kontynuowac kampanie i zarzadzac kontem.
+          Wejdź do panelu gracza, aby kontynuować kampanię i zarządzać kontem.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -53,12 +53,12 @@ export function LoginForm() {
           onSubmit={form.handleSubmit((values) => mutation.mutate(values))}
         >
           <div>
-            <Label htmlFor="identifier">Email lub nazwa uzytkownika</Label>
+            <Label htmlFor="identifier">E-mail lub nazwa użytkownika</Label>
             <Input id="identifier" {...form.register("identifier")} />
             <FormError message={form.formState.errors.identifier?.message} />
           </div>
           <div>
-            <Label htmlFor="password">Haslo</Label>
+            <Label htmlFor="password">Hasło</Label>
             <Input id="password" type="password" {...form.register("password")} />
             <FormError message={form.formState.errors.password?.message} />
           </div>
@@ -73,7 +73,7 @@ export function LoginForm() {
             type="submit"
             disabled={mutation.isPending}
           >
-            {mutation.isPending ? "Logowanie..." : "Zaloguj sie"}
+            {mutation.isPending ? "Logowanie..." : "Zaloguj się"}
           </Button>
         </form>
         <div className="mt-6 flex flex-col gap-3 text-sm text-[color:var(--foreground-muted)]">
@@ -81,19 +81,19 @@ export function LoginForm() {
             className="font-semibold text-[color:var(--accent-strong)]"
             href="/register"
           >
-            Nie masz konta? Zaloz je teraz
+            Nie masz konta? Załóż je teraz
           </Link>
           <Link
             className="font-semibold text-[color:var(--accent-strong)]"
             href="/reset-password"
           >
-            Zapomniales hasla? Otworz reset
+            Zapomniałeś hasła? Otwórz reset
           </Link>
           <Link
             className="font-semibold text-[color:var(--accent-strong)]"
             href="/verify-email"
           >
-            Konto nieaktywne? Zweryfikuj email
+            Konto nieaktywne? Zweryfikuj e-mail
           </Link>
         </div>
       </CardContent>

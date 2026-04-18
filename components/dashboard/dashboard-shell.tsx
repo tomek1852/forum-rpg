@@ -65,7 +65,7 @@ export function DashboardShell() {
   const logoutMutation = useMutation({
     mutationFn: async () => {
       if (!refreshToken) {
-        return { message: "Sesja lokalna zostala zamknieta." };
+        return { message: "Sesja lokalna została zamknięta." };
       }
 
       return logoutUser(refreshToken);
@@ -112,7 +112,7 @@ export function DashboardShell() {
                   Witaj, {profile?.username ?? "Graczu"}
                 </h1>
                 <p className="mt-3 max-w-2xl text-lg leading-8 text-[color:var(--foreground-muted)]">
-                  Tu zarzadzisz swoim kontem, przejdziesz do profilu i przygotujesz postacie do dalszej rozgrywki.
+                  Tu zarządzisz swoim kontem, przejdziesz do profilu i przygotujesz postacie do dalszej rozgrywki.
                 </p>
               </div>
             </div>
@@ -125,7 +125,7 @@ export function DashboardShell() {
               </Button>
               {profile ? (
                 <Button asChild size="lg">
-                  <Link href={`/profile/${profile.id}`}>Moj profil</Link>
+                  <Link href={`/profile/${profile.id}`}>Mój profil</Link>
                 </Button>
               ) : null}
               <Button
@@ -134,7 +134,7 @@ export function DashboardShell() {
                 onClick={() => logoutMutation.mutate()}
                 disabled={logoutMutation.isPending}
               >
-                {logoutMutation.isPending ? "Wylogowywanie..." : "Wyloguj sie"}
+                {logoutMutation.isPending ? "Wylogowywanie..." : "Wyloguj się"}
               </Button>
             </div>
           </div>
@@ -144,11 +144,11 @@ export function DashboardShell() {
             <CardHeader>
               <CardTitle>Profil gracza</CardTitle>
               <CardDescription>
-                Najwazniejsze dane zwracane przez backend.
+                Najważniejsze dane zwracane przez backend.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4 text-sm text-[color:var(--foreground-muted)]">
-              <ProfileRow label="Email" value={profile?.email ?? "-"} />
+              <ProfileRow label="E-mail" value={profile?.email ?? "-"} />
               <ProfileRow label="Nazwa" value={profile?.username ?? "-"} />
               <ProfileRow label="Rola" value={profile?.role ?? "-"} />
               <ProfileRow
@@ -173,7 +173,7 @@ export function DashboardShell() {
                   </CardDescription>
                 </div>
                 <Button asChild variant="secondary">
-                  <Link href="/character/new">Dodaj postac</Link>
+                  <Link href="/character/new">Dodaj postać</Link>
                 </Button>
               </div>
             </CardHeader>
@@ -186,7 +186,7 @@ export function DashboardShell() {
                 </div>
               ) : (
                 <p className="text-sm leading-6 text-[color:var(--foreground-muted)]">
-                  Nie masz jeszcze zadnej postaci. Utworz pierwsza karte i uzupelnij jej opis oraz statystyki.
+                  Nie masz jeszcze żadnej postaci. Utwórz pierwszą kartę i uzupełnij jej opis oraz statystyki.
                 </p>
               )}
             </CardContent>

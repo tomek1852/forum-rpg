@@ -72,16 +72,16 @@ export function VerifyEmailPanel() {
     <div className="grid w-full max-w-5xl gap-6 lg:grid-cols-2">
       <Card>
         <CardHeader>
-          <CardTitle>Zweryfikuj email</CardTitle>
+          <CardTitle>Zweryfikuj e-mail</CardTitle>
           <CardDescription>
-            Wklej token z maila lub z developerskiego podgladu, aby aktywowac konto.
+            Wklej token z maila lub z developerskiego podglądu, aby aktywować konto.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form
             className="space-y-5"
             onSubmit={verifyForm.handleSubmit((values) =>
-              verifyMutation.mutate(values),
+              verifyMutation.mutate(values)
             )}
           >
             <div>
@@ -111,7 +111,7 @@ export function VerifyEmailPanel() {
                 {verifyMutation.data.message}
               </p>
               <p className="mt-2">
-                Teraz mozesz przejsc do{" "}
+                Teraz możesz przejść do{" "}
                 <Link className="font-semibold text-[color:var(--accent-strong)]" href="/login">
                   logowania
                 </Link>
@@ -123,20 +123,20 @@ export function VerifyEmailPanel() {
       </Card>
       <Card>
         <CardHeader>
-          <CardTitle>Wyslij link ponownie</CardTitle>
+          <CardTitle>Wyślij link ponownie</CardTitle>
           <CardDescription>
-            Jesli zgubiles token, podaj email i wygeneruj nowa instrukcje weryfikacji.
+            Jeśli zgubiłeś token, podaj e-mail i wygeneruj nową instrukcję weryfikacji.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form
             className="space-y-5"
             onSubmit={requestForm.handleSubmit((values) =>
-              requestMutation.mutate(values),
+              requestMutation.mutate(values)
             )}
           >
             <div>
-              <Label htmlFor="verify-email-address">Email</Label>
+              <Label htmlFor="verify-email-address">E-mail</Label>
               <Input
                 id="verify-email-address"
                 type="email"
@@ -158,7 +158,7 @@ export function VerifyEmailPanel() {
               variant="secondary"
               disabled={requestMutation.isPending}
             >
-              {requestMutation.isPending ? "Wysylanie..." : "Wyslij ponownie"}
+              {requestMutation.isPending ? "Wysyłanie..." : "Wyślij ponownie"}
             </Button>
           </form>
           {requestMutation.isSuccess ? (

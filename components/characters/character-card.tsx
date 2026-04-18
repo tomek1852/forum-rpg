@@ -16,21 +16,21 @@ export function CharacterCard({
         <div className="flex items-start justify-between gap-4">
           <div>
             <CardTitle>{character.name}</CardTitle>
-            <CardDescription>{character.title ?? "Postac bez tytulu"}</CardDescription>
+            <CardDescription>{character.title ?? "Postać bez tytułu"}</CardDescription>
           </div>
           <Badge>{character.isPublic ? "Publiczna" : "Prywatna"}</Badge>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
         <p className="text-sm leading-6 text-[color:var(--foreground-muted)]">
-          {character.summary ?? "Brak krotkiego opisu. Uzupelnij szczegoly postaci, aby lepiej prezentowala sie w profilu."}
+          {character.summary ?? "Brak krótkiego opisu. Uzupełnij szczegóły postaci, aby lepiej prezentowała się w profilu."}
         </p>
         <div className="flex gap-3 text-sm font-semibold">
           <Link
             className="text-[color:var(--accent-strong)]"
             href={`/character/${character.id}`}
           >
-            Szczegoly
+            Szczegóły
           </Link>
           {editable ? (
             <Link

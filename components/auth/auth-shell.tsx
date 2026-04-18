@@ -34,7 +34,7 @@ export function AuthShell({
       </section>
       <div className="fixed left-6 top-6 z-20">
         <Button asChild size="sm" variant="secondary">
-          <Link href="/">Wroc na strone glowna</Link>
+          <Link href="/">Wróć na stronę główną</Link>
         </Button>
       </div>
     </div>

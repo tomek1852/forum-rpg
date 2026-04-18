@@ -12,21 +12,21 @@ export default function Home() {
             <Badge>Forum RPG / PBF Builder</Badge>
             <div className="space-y-5">
               <h1 className="max-w-4xl font-display text-6xl leading-none text-[color:var(--foreground)] sm:text-7xl">
-                Zbuduj swiat, zaloguj graczy i daj fabule stabilny start.
+                Zbuduj świat, zaloguj graczy i daj fabule stabilny start.
               </h1>
               <p className="max-w-2xl text-lg leading-8 text-[color:var(--foreground-muted)]">
-                Wejdz do panelu gracza, zarzadzaj kontem i przygotuj przestrzen pod dalszy rozwoj forumowej opowiesci.
+                Wejdź do panelu gracza, zarządzaj kontem i przygotuj przestrzeń pod dalszy rozwój forumowej opowieści.
               </p>
             </div>
             <div className="flex flex-col gap-4 sm:flex-row">
               <Button asChild size="lg">
                 <Link href="/register">
-                  Zaloz konto
+                  Załóż konto
                   <ArrowRight className="size-4" />
                 </Link>
               </Button>
               <Button asChild size="lg" variant="secondary">
-                <Link href="/login">Zaloguj sie</Link>
+                <Link href="/login">Zaloguj się</Link>
               </Button>
             </div>
           </div>

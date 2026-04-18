@@ -101,14 +101,14 @@ export function ProfileShell({ userId }: { userId: string }) {
                   {profile.displayName || profile.username}
                 </h1>
                 <p className="mt-2 max-w-2xl text-lg leading-8 text-[color:var(--foreground-muted)]">
-                  {profile.bio || "Profil gracza jest gotowy, ale czeka jeszcze na bardziej szczegolowy opis."}
+                  {profile.bio || "Profil gracza jest gotowy, ale czeka jeszcze na bardziej szczegółowy opis."}
                 </p>
               </div>
             </div>
             <div className="flex gap-3">
               {isOwnProfile ? (
                 <Button asChild size="lg">
-                  <Link href="/character/new">Nowa postac</Link>
+                  <Link href="/character/new">Nowa postać</Link>
                 </Button>
               ) : null}
               <Button asChild size="lg" variant="secondary">
@@ -122,12 +122,12 @@ export function ProfileShell({ userId }: { userId: string }) {
             <CardHeader>
               <CardTitle>Profil</CardTitle>
               <CardDescription>
-                Status: {profile.status}. Email zweryfikowany: {profile.emailVerified ? "tak" : "nie"}.
+                Status: {profile.status}. E-mail zweryfikowany: {profile.emailVerified ? "tak" : "nie"}.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4 text-sm text-[color:var(--foreground-muted)]">
               <ProfileRow label="Login" value={profile.username} />
-              <ProfileRow label="Email" value={profile.email} />
+              <ProfileRow label="E-mail" value={profile.email} />
               <ProfileRow
                 label="Ostatnio widziany"
                 value={
@@ -144,7 +144,7 @@ export function ProfileShell({ userId }: { userId: string }) {
               <CardTitle>Postacie gracza</CardTitle>
               <CardDescription>
                 {characters.length > 0
-                  ? "Aktualna lista postaci nalezacych do tego profilu."
+                  ? "Aktualna lista postaci należących do tego profilu."
                   : "Ten profil nie ma jeszcze publicznych postaci."}
               </CardDescription>
             </CardHeader>
@@ -161,7 +161,7 @@ export function ProfileShell({ userId }: { userId: string }) {
                 </div>
               ) : (
                 <p className="text-sm leading-6 text-[color:var(--foreground-muted)]">
-                  Dodaj pierwsza postac z tego profilu, aby rozpoczac watek fabularny i przygotowac sie pod forum.
+                  Dodaj pierwszą postać z tego profilu, aby rozpocząć wątek fabularny i przygotować się pod forum.
                 </p>
               )}
             </CardContent>

@@ -59,20 +59,20 @@ export function ForumCategoryShell({ categoryId }: { categoryId: string }) {
               <Badge>Kategoria forum</Badge>
               <div>
                 <h1 className="font-display text-5xl text-[color:var(--foreground)]">
-                  {category?.title ?? "Ladowanie kategorii..."}
+                  {category?.title ?? "Ładowanie kategorii..."}
                 </h1>
                 <p className="mt-3 max-w-3xl text-lg leading-8 text-[color:var(--foreground-muted)]">
                   {category?.description ||
-                    "Przegladaj watki i dolacz do scen, ktore rozwijaja swiat gry."}
+                    "Przeglądaj wątki i dołącz do scen, które rozwijają świat gry."}
                 </p>
               </div>
             </div>
             <div className="flex flex-wrap gap-3">
               <Button asChild size="lg" variant="secondary">
-                <Link href="/forum">Wroc do forum</Link>
+                <Link href="/forum">Wróć do forum</Link>
               </Button>
               <Button asChild size="lg">
-                <Link href={`/forum/new?categoryId=${categoryId}`}>Nowy watek</Link>
+                <Link href={`/forum/new?categoryId=${categoryId}`}>Nowy wątek</Link>
               </Button>
             </div>
           </div>
@@ -91,22 +91,22 @@ export function ForumCategoryShell({ categoryId }: { categoryId: string }) {
                     <div>
                       <CardTitle>{thread.title}</CardTitle>
                       <CardDescription className="mt-2">
-                        {getAuthorLabel(thread.author)} · {thread.postCount} postow
-                        · ostatnia aktywnosc {formatForumDate(thread.lastPostAt)}
+                        {getAuthorLabel(thread.author)} · {thread.postCount} postów
+                        · ostatnia aktywność {formatForumDate(thread.lastPostAt)}
                       </CardDescription>
                     </div>
                     <div className="flex gap-2">
-                      {thread.isPinned ? <Badge>Przypiety</Badge> : null}
-                      {thread.isLocked ? <Badge>Zamkniety</Badge> : null}
+                      {thread.isPinned ? <Badge>Przypięty</Badge> : null}
+                      {thread.isLocked ? <Badge>Zamknięty</Badge> : null}
                     </div>
                   </div>
                 </CardHeader>
                 <CardContent className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
                   <p className="max-w-3xl text-sm leading-7 text-[color:var(--foreground-muted)]">
-                    {thread.excerpt || "Ten watek nie ma jeszcze opisu startowego."}
+                    {thread.excerpt || "Ten wątek nie ma jeszcze opisu startowego."}
                   </p>
                   <Button asChild variant="secondary">
-                    <Link href={`/forum/${categoryId}/${thread.id}`}>Otworz watek</Link>
+                    <Link href={`/forum/${categoryId}/${thread.id}`}>Otwórz wątek</Link>
                   </Button>
                 </CardContent>
               </Card>
@@ -114,8 +114,8 @@ export function ForumCategoryShell({ categoryId }: { categoryId: string }) {
           ) : (
             <Card>
               <CardContent className="py-10 text-sm leading-7 text-[color:var(--foreground-muted)]">
-                Ta kategoria nie ma jeszcze zadnych watkow. Zaloz pierwszy i
-                rozpocznij scene.
+                Ta kategoria nie ma jeszcze żadnych wątków. Załóż pierwszy i
+                rozpocznij scenę.
               </CardContent>
             </Card>
           )}

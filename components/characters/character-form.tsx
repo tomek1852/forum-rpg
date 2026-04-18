@@ -76,9 +76,9 @@ export function CharacterForm({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{mode === "create" ? "Nowa postac" : "Edycja postaci"}</CardTitle>
+        <CardTitle>{mode === "create" ? "Nowa postać" : "Edycja postaci"}</CardTitle>
         <CardDescription>
-          Uzupelnij dane podstawowe, opis i bazowe statystyki w formacie JSON.
+          Uzupełnij dane podstawowe, opis i bazowe statystyki w formacie JSON.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -86,19 +86,19 @@ export function CharacterForm({
           className="grid gap-5"
           onSubmit={form.handleSubmit((values) => mutation.mutate(values))}
         >
-          <Field label="Imie postaci" error={form.formState.errors.name?.message}>
+          <Field label="Imię postaci" error={form.formState.errors.name?.message}>
             <Input {...form.register("name")} />
           </Field>
-          <Field label="Tytul lub rola" error={form.formState.errors.title?.message}>
+          <Field label="Tytuł lub rola" error={form.formState.errors.title?.message}>
             <Input {...form.register("title")} />
           </Field>
-          <Field label="Skrot opisu" error={form.formState.errors.summary?.message}>
+          <Field label="Skrót opisu" error={form.formState.errors.summary?.message}>
             <Textarea className="min-h-24" {...form.register("summary")} />
           </Field>
           <Field label="Biografia" error={form.formState.errors.biography?.message}>
             <Textarea {...form.register("biography")} />
           </Field>
-          <Field label="Wyglad" error={form.formState.errors.appearance?.message}>
+          <Field label="Wygląd" error={form.formState.errors.appearance?.message}>
             <Textarea className="min-h-28" {...form.register("appearance")} />
           </Field>
           <Field label="Avatar URL" error={form.formState.errors.avatarUrl?.message}>
@@ -108,7 +108,7 @@ export function CharacterForm({
             <Textarea
               className="min-h-40 font-mono text-xs"
               {...form.register("statsRaw")}
-              placeholder={'{"sila": 8, "zrecznosc": 6, "klasa": "lowca"}'}
+              placeholder={'{"siła": 8, "zręczność": 6, "klasa": "łowca"}'}
             />
           </Field>
           <label className="flex items-center gap-3 rounded-2xl bg-[color:var(--surface)] px-4 py-3 text-sm font-semibold text-[color:var(--foreground)]">
@@ -117,7 +117,7 @@ export function CharacterForm({
               type="checkbox"
               {...form.register("isPublic")}
             />
-            Pokazuj postac publicznie w profilu
+            Pokazuj postać publicznie w profilu
           </label>
           <FormError message={mutation.isError ? getApiErrorMessage(mutation.error) : undefined} />
           <div className="flex gap-3">
@@ -125,7 +125,7 @@ export function CharacterForm({
               {mutation.isPending
                 ? "Zapisywanie..."
                 : mode === "create"
-                  ? "Utworz postac"
+                  ? "Utwórz postać"
                   : "Zapisz zmiany"}
             </Button>
             <Button
@@ -134,7 +134,7 @@ export function CharacterForm({
               variant="secondary"
               onClick={() => router.back()}
             >
-              Wroc
+              Wróć
             </Button>
           </div>
         </form>

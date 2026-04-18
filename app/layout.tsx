@@ -4,7 +4,7 @@ import { Providers } from "@/lib/providers";
 
 export const metadata: Metadata = {
   title: "Forum RPG",
-  description: "Aplikacja PBF z auth, dashboardem i fundamentem pod dalsze fazy.",
+  description: "Aplikacja PBF z autoryzacją, panelem gracza i fundamentem pod dalsze fazy.",
 };
 
 export default function RootLayout({

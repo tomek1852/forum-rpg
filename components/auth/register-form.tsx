@@ -58,7 +58,7 @@ export function RegisterForm() {
       <CardHeader>
         <CardTitle>Rejestracja</CardTitle>
         <CardDescription>
-          Stworz konto gracza i przygotuj baze pod pierwsza postac.
+          Stwórz konto gracza i przygotuj bazę pod pierwszą postać.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -68,21 +68,19 @@ export function RegisterForm() {
         >
           <Field
             id="email"
-            label="Email"
+            label="E-mail"
             error={form.formState.errors.email?.message}
-            input={
-              <Input id="email" type="email" {...form.register("email")} />
-            }
+            input={<Input id="email" type="email" {...form.register("email")} />}
           />
           <Field
             id="username"
-            label="Nazwa uzytkownika"
+            label="Nazwa użytkownika"
             error={form.formState.errors.username?.message}
             input={<Input id="username" {...form.register("username")} />}
           />
           <Field
             id="password"
-            label="Haslo"
+            label="Hasło"
             error={form.formState.errors.password?.message}
             input={
               <Input
@@ -94,7 +92,7 @@ export function RegisterForm() {
           />
           <Field
             id="confirmPassword"
-            label="Powtorz haslo"
+            label="Powtórz hasło"
             error={form.formState.errors.confirmPassword?.message}
             input={
               <Input
@@ -105,7 +103,7 @@ export function RegisterForm() {
             }
           />
           <p className="text-sm leading-6 text-[color:var(--foreground-muted)]">
-            Rejestracja tworzy konto w stanie oczekujacym. Po weryfikacji email aktywujesz logowanie.
+            Rejestracja tworzy konto w stanie oczekującym. Po weryfikacji e-mail aktywujesz logowanie.
           </p>
           <FormError
             message={
@@ -128,16 +126,16 @@ export function RegisterForm() {
             type="submit"
             disabled={mutation.isPending}
           >
-            {mutation.isPending ? "Tworzenie konta..." : "Zaloz konto"}
+            {mutation.isPending ? "Tworzenie konta..." : "Załóż konto"}
           </Button>
         </form>
         <p className="mt-6 text-sm text-[color:var(--foreground-muted)]">
-          Masz juz konto?{" "}
+          Masz już konto?{" "}
           <Link
             className="font-semibold text-[color:var(--accent-strong)]"
             href="/login"
           >
-            Przejdz do logowania
+            Przejdź do logowania
           </Link>
         </p>
         <p className="mt-3 text-sm text-[color:var(--foreground-muted)]">
@@ -146,7 +144,7 @@ export function RegisterForm() {
             className="font-semibold text-[color:var(--accent-strong)]"
             href="/verify-email"
           >
-            Otworz weryfikacje email
+            Otwórz weryfikację e-mail
           </Link>
         </p>
       </CardContent>

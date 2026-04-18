@@ -4,8 +4,8 @@ import { ResetPasswordPanel } from "@/components/auth/reset-password-panel";
 export default function ResetPasswordPage() {
   return (
     <AuthShell
-      title="Przywroc dostep do konta"
-      description="Ustaw nowe haslo i odzyskaj dostep do swojego konta."
+      title="Przywróć dostęp do konta"
+      description="Ustaw nowe hasło i odzyskaj dostęp do swojego konta."
     >
       <ResetPasswordPanel />
     </AuthShell>

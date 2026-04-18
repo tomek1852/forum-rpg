@@ -60,11 +60,11 @@ export function ForumHomeShell() {
               <Badge>Forum</Badge>
               <div>
                 <h1 className="font-display text-5xl text-[color:var(--foreground)]">
-                  Kategorie i watki
+                  Kategorie i wątki
                 </h1>
                 <p className="mt-3 max-w-3xl text-lg leading-8 text-[color:var(--foreground-muted)]">
-                  Wybierz kategorie, przejdz do aktywnych watkow i zaloz nowa
-                  scene dla swojej opowiesci.
+                  Wybierz kategorię, przejdź do aktywnych wątków i załóż nową
+                  scenę dla swojej opowieści.
                 </p>
               </div>
             </div>
@@ -73,7 +73,7 @@ export function ForumHomeShell() {
                 <Link href="/dashboard">Dashboard</Link>
               </Button>
               <Button asChild size="lg">
-                <Link href="/forum/new">Nowy watek</Link>
+                <Link href="/forum/new">Nowy wątek</Link>
               </Button>
             </div>
           </div>
@@ -91,7 +91,7 @@ export function ForumHomeShell() {
                 style={{ backgroundColor: category.color ?? "#9d3d2d" }}
               />
               <CardHeader>
-                <CardDescription>{category.threadCount} watkow</CardDescription>
+                <CardDescription>{category.threadCount} wątków</CardDescription>
                 <CardTitle>{category.title}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-5">
@@ -102,7 +102,7 @@ export function ForumHomeShell() {
                 {category.latestThread ? (
                   <div className="rounded-[24px] bg-[color:var(--surface)] p-4">
                     <p className="text-xs uppercase tracking-[0.22em] text-[color:var(--foreground-subtle)]">
-                      Ostatnia aktywnosc
+                      Ostatnia aktywność
                     </p>
                     <p className="mt-2 text-base font-semibold text-[color:var(--foreground)]">
                       {category.latestThread.title}
@@ -114,11 +114,11 @@ export function ForumHomeShell() {
                   </div>
                 ) : (
                   <div className="rounded-[24px] bg-[color:var(--surface)] p-4 text-sm leading-6 text-[color:var(--foreground-muted)]">
-                    Brak watkow w tej kategorii. Mozesz zalozyc pierwszy.
+                    Brak wątków w tej kategorii. Możesz założyć pierwszy.
                   </div>
                 )}
                 <Button asChild className="w-full" variant="secondary">
-                  <Link href={`/forum/${category.id}`}>Otworz kategorie</Link>
+                  <Link href={`/forum/${category.id}`}>Otwórz kategorię</Link>
                 </Button>
               </CardContent>
             </Card>

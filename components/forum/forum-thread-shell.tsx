@@ -83,7 +83,7 @@ export function ForumThreadShell({
 
   const postCountLabel = useMemo(() => {
     const count = query.data?.thread.postCount ?? 0;
-    return `${count} ${count === 1 ? "post" : count < 5 ? "posty" : "postow"}`;
+    return `${count} ${count === 1 ? "post" : count < 5 ? "posty" : "postów"}`;
   }, [query.data?.thread.postCount]);
 
   if (!hydrated || (accessToken && query.isLoading)) {
@@ -108,30 +108,30 @@ export function ForumThreadShell({
         <header className="overflow-hidden rounded-[36px] border border-[color:var(--border)] bg-[color:var(--hero)] p-8 shadow-[0_18px_70px_rgba(84,53,29,0.16)]">
           <div className="space-y-4">
             <div className="flex flex-wrap gap-3">
-              <Badge>Watek forum</Badge>
-              {query.data?.thread.isPinned ? <Badge>Przypiety</Badge> : null}
-              {query.data?.thread.isLocked ? <Badge>Zamkniety</Badge> : null}
+              <Badge>Wątek forum</Badge>
+              {query.data?.thread.isPinned ? <Badge>Przypięty</Badge> : null}
+              {query.data?.thread.isLocked ? <Badge>Zamknięty</Badge> : null}
             </div>
             <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
               <div>
                 <h1 className="font-display text-5xl text-[color:var(--foreground)]">
-                  {query.data?.thread.title ?? "Ladowanie watku..."}
+                  {query.data?.thread.title ?? "Ładowanie wątku..."}
                 </h1>
                 <p className="mt-3 max-w-3xl text-lg leading-8 text-[color:var(--foreground-muted)]">
                   {query.data
-                    ? `${getAuthorLabel(query.data.thread.author)} rozpoczal ten watek. Ostatnia aktywnosc: ${formatForumDate(query.data.thread.lastPostAt)}.`
-                    : "Trwa pobieranie szczegolow watku."}
+                    ? `${getAuthorLabel(query.data.thread.author)} rozpoczął ten wątek. Ostatnia aktywność: ${formatForumDate(query.data.thread.lastPostAt)}.`
+                    : "Trwa pobieranie szczegółów wątku."}
                 </p>
               </div>
               <div className="flex flex-wrap gap-3">
                 <Button asChild size="lg" variant="secondary">
                   <Link href={`/forum/${query.data?.category.id ?? categoryId}`}>
-                    Wroc do kategorii
+                    Wróć do kategorii
                   </Link>
                 </Button>
                 <Button asChild size="lg">
                   <Link href={`/forum/new?categoryId=${query.data?.category.id ?? categoryId}`}>
-                    Nowy watek
+                    Nowy wątek
                   </Link>
                 </Button>
               </div>
@@ -150,7 +150,7 @@ export function ForumThreadShell({
             </CardTitle>
             <CardDescription>
               {query.data?.category.description ||
-                "Watek nalezy do tej kategorii forum."}
+                "Wątek należy do tej kategorii forum."}
             </CardDescription>
           </CardHeader>
         </Card>
@@ -161,7 +161,7 @@ export function ForumThreadShell({
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                   <div>
                     <CardTitle className="text-2xl">
-                      {index === 0 ? "Post otwierajacy" : `Odpowiedz ${index}`}
+                      {index === 0 ? "Post otwierający" : `Odpowiedź ${index}`}
                     </CardTitle>
                     <CardDescription className="mt-2">
                       {getAuthorLabel(post.author)} · {formatForumDate(post.createdAt)}
@@ -198,11 +198,11 @@ export function ForumThreadShell({
         </section>
         <Card>
           <CardHeader>
-            <CardTitle>{canReply ? "Dodaj odpowiedz" : "Watek jest zamkniety"}</CardTitle>
+            <CardTitle>{canReply ? "Dodaj odpowiedź" : "Wątek jest zamknięty"}</CardTitle>
             <CardDescription>
               {canReply
-                ? "Dopiszesz nowa odpowiedz do watku albo odpowiesz z cytatem wybranego posta."
-                : "Ten watek nie przyjmuje juz nowych odpowiedzi."}
+                ? "Dopiszesz nową odpowiedź do wątku albo odpowiesz z cytatem wybranego posta."
+                : "Ten wątek nie przyjmuje już nowych odpowiedzi."}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -227,7 +227,7 @@ export function ForumThreadShell({
                         variant="secondary"
                         onClick={() => setSelectedQuote(null)}
                       >
-                        Usun cytat
+                        Usuń cytat
                       </Button>
                     </div>
                   </div>
@@ -235,7 +235,7 @@ export function ForumThreadShell({
                 <Textarea
                   className="min-h-48"
                   {...form.register("content")}
-                  placeholder="Opisz scene, odpowiedz graczowi albo rozwin watki fabularne..."
+                  placeholder="Opisz scenę, odpowiedz graczowi albo rozwiń wątki fabularne..."
                 />
                 <FormError message={form.formState.errors.content?.message} />
                 <FormError
@@ -243,7 +243,7 @@ export function ForumThreadShell({
                 />
                 <div className="flex gap-3">
                   <Button size="lg" type="submit" disabled={mutation.isPending}>
-                    {mutation.isPending ? "Zapisywanie..." : "Dodaj odpowiedz"}
+                    {mutation.isPending ? "Zapisywanie..." : "Dodaj odpowiedź"}
                   </Button>
                 </div>
               </form>

@@ -4,6 +4,8 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
+import { NotificationType } from "@prisma/client";
+import { NotificationsService } from "../notifications/notifications.service";
 import { PrismaService } from "../prisma/prisma.service";
 import { CreateCategoryDto } from "./dto/create-category.dto";
 import { CreatePostDto } from "./dto/create-post.dto";
@@ -19,7 +21,11 @@ const userSummarySelect = {
 
 @Injectable()
 export class ForumService {
-  constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
+  constructor(
+    @Inject(PrismaService) private readonly prisma: PrismaService,
+    @Inject(NotificationsService)
+    private readonly notificationsService: NotificationsService,
+  ) {}
 
   async listCategories() {
     const categories = await this.prisma.forumCategory.findMany({
@@ -273,6 +279,28 @@ export class ForumService {
       throw new NotFoundException("Nie udalo sie utworzyc watku.");
     }
 
+    const moderators = await this.prisma.user.findMany({
+      where: {
+        id: { not: authorId },
+        role: { in: ["GM", "ADMIN"] },
+        status: "ACTIVE",
+        emailVerified: true,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    await this.notificationsService.createForUsers(
+      moderators.map((moderator) => ({
+        userId: moderator.id,
+        type: NotificationType.FORUM_NEW_THREAD,
+        title: "Nowy watek na forum",
+        message: `${this.getAuthorLabel(result.author)} zalozyl watek "${result.title}" w kategorii ${category.title}.`,
+        link: `/forum/${result.categoryId}/${result.id}`,
+      })),
+    );
+
     return {
       thread: {
         id: result.id,
@@ -306,9 +334,22 @@ export class ForumService {
       throw new ForbiddenException("Ten watek jest zamkniety.");
     }
 
+    let quotePost:
+      | {
+          id: string;
+          threadId: string;
+          authorId: string;
+        }
+      | null = null;
+
     if (dto.quotePostId) {
-      const quotePost = await this.prisma.forumPost.findUnique({
+      quotePost = await this.prisma.forumPost.findUnique({
         where: { id: dto.quotePostId },
+        select: {
+          id: true,
+          threadId: true,
+          authorId: true,
+        },
       });
 
       if (!quotePost || quotePost.threadId !== threadId) {
@@ -356,6 +397,39 @@ export class ForumService {
       throw new NotFoundException("Nie udalo sie zapisac odpowiedzi.");
     }
 
+    const recipients = new Map<
+      string,
+      {
+        userId: string;
+        type: NotificationType;
+        title: string;
+        message: string;
+        link: string;
+      }
+    >();
+
+    if (thread.authorId !== authorId) {
+      recipients.set(thread.authorId, {
+        userId: thread.authorId,
+        type: NotificationType.FORUM_THREAD_REPLY,
+        title: "Nowa odpowiedz w obserwowanym watku",
+        message: `${this.getAuthorLabel(post.author)} odpowiedzial w watku "${thread.title}".`,
+        link: `/forum/${thread.categoryId}/${threadId}#post-${post.id}`,
+      });
+    }
+
+    if (quotePost && quotePost.authorId !== authorId) {
+      recipients.set(quotePost.authorId, {
+        userId: quotePost.authorId,
+        type: NotificationType.FORUM_POST_QUOTE,
+        title: "Któs zacytowal Twoj post",
+        message: `${this.getAuthorLabel(post.author)} zacytowal Twoj wpis w watku "${thread.title}".`,
+        link: `/forum/${thread.categoryId}/${threadId}#post-${post.id}`,
+      });
+    }
+
+    await this.notificationsService.createForUsers([...recipients.values()]);
+
     return {
       post: {
         id: post.id,
@@ -388,5 +462,9 @@ export class ForumService {
     }
 
     return `${normalized.slice(0, 177)}...`;
+  }
+
+  private getAuthorLabel(author: { displayName: string | null; username: string }) {
+    return author.displayName || author.username;
   }
 }

@@ -156,7 +156,7 @@ export function ForumThreadShell({
         </Card>
         <section className="space-y-4">
           {posts.map((post, index) => (
-            <Card key={post.id}>
+            <Card id={`post-${post.id}`} key={post.id}>
               <CardHeader>
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                   <div>

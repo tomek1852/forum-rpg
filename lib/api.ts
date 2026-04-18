@@ -14,6 +14,7 @@ import type {
   ForumReplyPayload,
   ForumThreadPayload,
   ForumThreadResponse,
+  NotificationsResponse,
   LoginPayload,
   RegisterResponse,
   RegisterPayload,
@@ -246,6 +247,27 @@ export async function createForumPost(
     `/forum/threads/${threadId}/posts`,
     payload,
   );
+  return data;
+}
+
+export async function getNotifications() {
+  const { data } = await api.get<NotificationsResponse>("/notifications");
+  return data;
+}
+
+export async function markNotificationAsRead(notificationId: string) {
+  const { data } = await api.patch<{
+    message: string;
+    unreadCount: number;
+  }>(`/notifications/${notificationId}/read`);
+  return data;
+}
+
+export async function markAllNotificationsAsRead() {
+  const { data } = await api.patch<{
+    message: string;
+    unreadCount: number;
+  }>("/notifications/read-all");
   return data;
 }
 

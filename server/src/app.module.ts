@@ -3,6 +3,7 @@ import { ConfigModule } from "@nestjs/config";
 import { AuthModule } from "./auth/auth.module";
 import { CharactersModule } from "./characters/characters.module";
 import { ForumModule } from "./forum/forum.module";
+import { NotificationsModule } from "./notifications/notifications.module";
 import { PrismaModule } from "./prisma/prisma.module";
 import { UsersModule } from "./users/users.module";
 
@@ -15,6 +16,7 @@ import { UsersModule } from "./users/users.module";
     PrismaModule,
     UsersModule,
     CharactersModule,
+    NotificationsModule,
     ForumModule,
     AuthModule,
   ],

@@ -120,6 +120,9 @@ export function DashboardShell() {
               <Button asChild size="lg" variant="secondary">
                 <Link href="/forum">Forum</Link>
               </Button>
+              <Button asChild size="lg" variant="secondary">
+                <Link href="/notifications">Powiadomienia</Link>
+              </Button>
               {profile ? (
                 <Button asChild size="lg">
                   <Link href={`/profile/${profile.id}`}>Moj profil</Link>

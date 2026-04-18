@@ -19,6 +19,12 @@ enum AccountStatus {
   BLOCKED
 }
 
+enum NotificationType {
+  FORUM_NEW_THREAD
+  FORUM_THREAD_REPLY
+  FORUM_POST_QUOTE
+}
+
 model User {
   id                  String               @id @default(uuid())
   email               String               @unique
@@ -40,6 +46,7 @@ model User {
   characters          Character[]
   forumThreads        ForumThread[]        @relation("ForumThreadAuthor")
   forumPosts          ForumPost[]          @relation("ForumPostAuthor")
+  notifications       Notification[]
 }
 
 model RefreshToken {
@@ -143,4 +150,19 @@ model ForumPost {
   @@index([threadId, createdAt])
   @@index([authorId])
   @@index([quotePostId])
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  type      NotificationType
+  title     String
+  message   String
+  link      String?
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+  readAt    DateTime?
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead, createdAt])
 }

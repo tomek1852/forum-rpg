@@ -154,6 +154,28 @@ export interface ForumPostResponse {
   post: ForumPost;
 }
 
+export type NotificationType =
+  | "FORUM_NEW_THREAD"
+  | "FORUM_THREAD_REPLY"
+  | "FORUM_POST_QUOTE";
+
+export interface Notification {
+  id: string;
+  type: NotificationType;
+  title: string;
+  message: string;
+  link: string | null;
+  isRead: boolean;
+  createdAt: string;
+  readAt: string | null;
+  userId: string;
+}
+
+export interface NotificationsResponse {
+  notifications: Notification[];
+  unreadCount: number;
+}
+
 export interface LoginPayload {
   identifier: string;
   password: string;

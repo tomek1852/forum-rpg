@@ -34,3 +34,12 @@
 - Zaimplementowano frontendowe widoki `forum`, `forum/[categoryId]`, `forum/[categoryId]/[threadId]` i `forum/new` z React Query, formularzem nowego watku oraz odpowiedziami z cytowaniem.
 - Dashboard dostal bezposredni skrot do forum, a wpisy i watki wyswietlaja autora, aktywnosc i podstawowe statusy watku.
 - Zweryfikowano iteracje poleceniami: `npm --prefix server run prisma:migrate:dev`, `npm --prefix server run prisma:generate`, `npm --prefix server run test`, `npm --prefix server run build`, `npm run lint`, `npm run test:web`, `npm run build:web`.
+
+## 2026-04-18 - ETAP 1 - podstawowe powiadomienia - IN PROGRESS
+
+- Dodano model `Notification` oraz enum `NotificationType` pod podstawowe powiadomienia in-app zwiazane z forum.
+- Przygotowano backend `notifications` w NestJS: lista powiadomien uzytkownika, oznaczanie pojedynczego wpisu jako przeczytany oraz oznaczanie wszystkich jako przeczytane.
+- Powiadomienia zostaly podlaczone do forum: nowy watek moze powiadomic `GM/Admin`, a odpowiedzi i cytaty tworza powiadomienia dla wlasciciela watku lub autora cytowanego posta.
+- Dodano frontendowy widok `notifications`, klienta API oraz wejscie do powiadomien z dashboardu.
+- Zweryfikowano iteracje poleceniami: `npm --prefix server run prisma:generate`, `npm --prefix server run test`, `npm --prefix server run build`, `npm run lint`, `npm run test:web`, `npm run build:web`.
+- Uwaga operacyjna: migracja `202604181000_notifications` nie zostala jeszcze zastosowana, poniewaz lokalna baza pod `localhost:5433` nie byla uruchomiona w momencie weryfikacji. Po starcie Dockera/PostgreSQL trzeba wykonac `npm --prefix server run prisma:migrate:dev`.

@@ -43,3 +43,12 @@
 - Dodano frontendowy widok `notifications`, klienta API oraz wejscie do powiadomien z dashboardu.
 - Zweryfikowano iteracje poleceniami: `npm --prefix server run prisma:generate`, `npm --prefix server run test`, `npm --prefix server run build`, `npm run lint`, `npm run test:web`, `npm run build:web`.
 - Uwaga operacyjna: migracja `202604181000_notifications` nie zostala jeszcze zastosowana, poniewaz lokalna baza pod `localhost:5433` nie byla uruchomiona w momencie weryfikacji. Po starcie Dockera/PostgreSQL trzeba wykonac `npm --prefix server run prisma:migrate:dev`.
+
+## 2026-04-18 - ETAP 1 - mailer auth i powiadomienia email - IN PROGRESS
+
+- Dodano backendowy modul `mailer` oparty o `nodemailer` z konfiguracja SMTP przez `.env` oraz fallbackiem developerskim do logow serwera.
+- Rejestracja i ponowna weryfikacja email wysylaja teraz wiadomosci aktywacyjne z linkiem do `verify-email`.
+- Reset hasla wysyla wiadomosc z linkiem do `reset-password`, bez zrywania obecnego developerskiego token flow.
+- Powiadomienia forum moga wysylac rowniez kopie emailowe do aktywnych i zweryfikowanych odbiorcow.
+- Zaktualizowano `server/.env.example` o `APP_URL`, `MAIL_FROM_*` i ustawienia `SMTP_*`.
+- Zweryfikowano iteracje poleceniami: `npm --prefix server run test`, `npm --prefix server run build`.

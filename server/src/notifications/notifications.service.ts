@@ -1,5 +1,6 @@
 import { Inject, Injectable, NotFoundException } from "@nestjs/common";
 import { NotificationType } from "@prisma/client";
+import { MailerService } from "../mailer/mailer.service";
 import { PrismaService } from "../prisma/prisma.service";
 
 type NotificationCreateInput = {
@@ -12,7 +13,10 @@ type NotificationCreateInput = {
 
 @Injectable()
 export class NotificationsService {
-  constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
+  constructor(
+    @Inject(PrismaService) private readonly prisma: PrismaService,
+    @Inject(MailerService) private readonly mailerService: MailerService,
+  ) {}
 
   async listMine(userId: string) {
     const [notifications, unreadCount] = await Promise.all([
@@ -109,5 +113,42 @@ export class NotificationsService {
         link: entry.link,
       })),
     });
+
+    const recipients = await this.prisma.user.findMany({
+      where: {
+        id: { in: values.map((entry) => entry.userId) },
+        isActive: true,
+        emailVerified: true,
+        status: "ACTIVE",
+      },
+      select: {
+        id: true,
+        email: true,
+        username: true,
+        displayName: true,
+      },
+    });
+
+    const recipientMap = new Map(
+      recipients.map((recipient) => [recipient.id, recipient]),
+    );
+
+    await Promise.all(
+      values.map(async (entry) => {
+        const recipient = recipientMap.get(entry.userId);
+
+        if (!recipient) {
+          return;
+        }
+
+        await this.mailerService.sendNotificationEmail({
+          email: recipient.email,
+          username: recipient.displayName || recipient.username,
+          title: entry.title,
+          message: entry.message,
+          link: entry.link,
+        });
+      }),
+    );
   }
 }

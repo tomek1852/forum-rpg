@@ -91,6 +91,10 @@ describe("AuthService", () => {
     get: jest.fn((key: string, fallback?: string) => fallback),
     getOrThrow: jest.fn((key: string) => `secret-for-${key}`),
   } as unknown as ConfigService;
+  const mailerService = {
+    sendVerificationEmail: jest.fn(),
+    sendPasswordResetEmail: jest.fn(),
+  };
 
   let service: AuthService;
 
@@ -137,6 +141,7 @@ describe("AuthService", () => {
       prisma as never,
       jwtService as never,
       configService,
+      mailerService as never,
     );
   });
 
@@ -151,6 +156,12 @@ describe("AuthService", () => {
 
     expect(usersService.createUser).toHaveBeenCalled();
     expect(prisma.emailVerificationToken.create).toHaveBeenCalled();
+    expect(mailerService.sendVerificationEmail).toHaveBeenCalledWith(
+      expect.objectContaining({
+        email: pendingUser.email,
+        username: pendingUser.username,
+      }),
+    );
     expect(result.message).toContain("Zweryfikuj email");
     expect(result.user.username).toBe("hero");
   });

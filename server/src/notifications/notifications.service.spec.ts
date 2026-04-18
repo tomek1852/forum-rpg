@@ -4,6 +4,9 @@ import { NotificationsService } from "./notifications.service";
 
 describe("NotificationsService", () => {
   const prisma = {
+    user: {
+      findMany: jest.fn(),
+    },
     notification: {
       findMany: jest.fn(),
       count: jest.fn(),
@@ -11,12 +14,15 @@ describe("NotificationsService", () => {
       createMany: jest.fn(),
     },
   };
+  const mailerService = {
+    sendNotificationEmail: jest.fn(),
+  };
 
   let service: NotificationsService;
 
   beforeEach(() => {
     jest.clearAllMocks();
-    service = new NotificationsService(prisma as never);
+    service = new NotificationsService(prisma as never, mailerService as never);
   });
 
   it("lists notifications with unread count", async () => {
@@ -38,6 +44,21 @@ describe("NotificationsService", () => {
   });
 
   it("creates notifications for distinct recipients", async () => {
+    prisma.user.findMany.mockResolvedValueOnce([
+      {
+        id: "user-1",
+        email: "user1@example.com",
+        username: "user1",
+        displayName: null,
+      },
+      {
+        id: "user-2",
+        email: "user2@example.com",
+        username: "user2",
+        displayName: "User Two",
+      },
+    ]);
+
     await service.createForUsers([
       {
         userId: "user-1",
@@ -80,5 +101,6 @@ describe("NotificationsService", () => {
         },
       ],
     });
+    expect(mailerService.sendNotificationEmail).toHaveBeenCalledTimes(2);
   });
 });

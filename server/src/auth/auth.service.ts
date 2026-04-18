@@ -10,6 +10,7 @@ import { JwtService } from "@nestjs/jwt";
 import { AccountStatus, RefreshToken, User } from "@prisma/client";
 import * as bcrypt from "bcrypt";
 import { createHash, randomBytes } from "crypto";
+import { MailerService } from "../mailer/mailer.service";
 import { PrismaService } from "../prisma/prisma.service";
 import { UsersService } from "../users/users.service";
 import {
@@ -47,6 +48,8 @@ export class AuthService {
     private readonly jwtService: JwtService,
     @Inject(ConfigService)
     private readonly configService: ConfigService,
+    @Inject(MailerService)
+    private readonly mailerService: MailerService,
   ) {
     this.accessTokenTtl = this.configService.get("ACCESS_TOKEN_TTL", "15m");
     this.refreshTokenTtl = this.configService.get("REFRESH_TOKEN_TTL", "7d");
@@ -89,6 +92,11 @@ export class AuthService {
     });
 
     const verificationToken = await this.issueEmailVerificationToken(user.id);
+    await this.mailerService.sendVerificationEmail({
+      email: user.email,
+      username: user.username,
+      token: verificationToken,
+    });
 
     return {
       message:
@@ -148,6 +156,11 @@ export class AuthService {
     }
 
     const verificationToken = await this.issueEmailVerificationToken(user.id);
+    await this.mailerService.sendVerificationEmail({
+      email: user.email,
+      username: user.username,
+      token: verificationToken,
+    });
 
     return {
       message:
@@ -280,6 +293,12 @@ export class AuthService {
           Date.now() + this.resetTokenTtlMinutes * 60_000,
         ),
       },
+    });
+
+    await this.mailerService.sendPasswordResetEmail({
+      email: user.email,
+      username: user.username,
+      token: rawToken,
     });
 
     return {

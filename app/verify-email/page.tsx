@@ -6,7 +6,7 @@ export default function VerifyEmailPage() {
   return (
     <AuthShell
       title="Aktywuj konto przed pierwszą sesją"
-      description="Potwierdź adres e-mail, aby aktywować konto i wejść do panelu."
+      description="Na podany adres wysyłamy link aktywacyjny. Po potwierdzeniu konto trafi do kolejki zatwierdzenia."
     >
       <Suspense
         fallback={

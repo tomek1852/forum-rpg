@@ -44,7 +44,7 @@ export function LoginForm() {
       <CardHeader>
         <CardTitle>Logowanie</CardTitle>
         <CardDescription>
-          Wejdź do panelu gracza, aby kontynuować kampanię i zarządzać kontem.
+          Wejdz do panelu gracza, aby kontynuowac kampanie i zarzadzac kontem.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -53,12 +53,12 @@ export function LoginForm() {
           onSubmit={form.handleSubmit((values) => mutation.mutate(values))}
         >
           <div>
-            <Label htmlFor="identifier">E-mail lub nazwa użytkownika</Label>
+            <Label htmlFor="identifier">E-mail lub nazwa uzytkownika</Label>
             <Input id="identifier" {...form.register("identifier")} />
             <FormError message={form.formState.errors.identifier?.message} />
           </div>
           <div>
-            <Label htmlFor="password">Hasło</Label>
+            <Label htmlFor="password">Haslo</Label>
             <Input id="password" type="password" {...form.register("password")} />
             <FormError message={form.formState.errors.password?.message} />
           </div>
@@ -73,7 +73,7 @@ export function LoginForm() {
             type="submit"
             disabled={mutation.isPending}
           >
-            {mutation.isPending ? "Logowanie..." : "Zaloguj się"}
+            {mutation.isPending ? "Logowanie..." : "Zaloguj sie"}
           </Button>
         </form>
         <div className="mt-6 flex flex-col gap-3 text-sm text-[color:var(--foreground-muted)]">
@@ -81,13 +81,13 @@ export function LoginForm() {
             className="font-semibold text-[color:var(--accent-strong)]"
             href="/register"
           >
-            Nie masz konta? Załóż je teraz
+            Nie masz konta? Zaloz je teraz
           </Link>
           <Link
             className="font-semibold text-[color:var(--accent-strong)]"
             href="/reset-password"
           >
-            Zapomniałeś hasła? Otwórz reset
+            Zapomniales hasla? Otworz reset
           </Link>
           <Link
             className="font-semibold text-[color:var(--accent-strong)]"

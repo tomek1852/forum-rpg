@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -12,10 +12,7 @@ import {
   verifyEmail,
   getApiErrorMessage,
 } from "@/lib/api";
-import {
-  requestEmailVerificationSchema,
-  verifyEmailSchema,
-} from "@/lib/validators";
+import { requestEmailVerificationSchema } from "@/lib/validators";
 import {
   Card,
   CardContent,
@@ -27,20 +24,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-type VerifyValues = z.input<typeof verifyEmailSchema>;
 type RequestValues = z.input<typeof requestEmailVerificationSchema>;
 
 export function VerifyEmailPanel() {
   const searchParams = useSearchParams();
   const urlToken = searchParams.get("token");
-  const [devToken, setDevToken] = useState<string | null>(urlToken);
+  const verificationStartedRef = useRef(false);
 
-  const verifyForm = useForm<VerifyValues>({
-    resolver: zodResolver(verifyEmailSchema),
-    defaultValues: {
-      token: searchParams.get("token") ?? "",
-    },
-  });
   const requestForm = useForm<RequestValues>({
     resolver: zodResolver(requestEmailVerificationSchema),
     defaultValues: {
@@ -48,84 +38,80 @@ export function VerifyEmailPanel() {
     },
   });
 
-  useEffect(() => {
-    if (urlToken) {
-      verifyForm.setValue("token", urlToken);
-    }
-  }, [urlToken, verifyForm]);
-
   const verifyMutation = useMutation({
     mutationFn: verifyEmail,
   });
 
   const requestMutation = useMutation({
     mutationFn: requestEmailVerification,
-    onSuccess: (data) => {
-      if (data.developmentVerificationToken) {
-        setDevToken(data.developmentVerificationToken);
-        verifyForm.setValue("token", data.developmentVerificationToken);
-      }
-    },
   });
 
+  useEffect(() => {
+    if (!urlToken || verificationStartedRef.current) {
+      return;
+    }
+
+    verificationStartedRef.current = true;
+    verifyMutation.mutate({ token: urlToken });
+  }, [urlToken, verifyMutation]);
+
   return (
-    <div className="grid w-full max-w-5xl gap-6 lg:grid-cols-2">
+    <div className="grid w-full max-w-3xl gap-6">
       <Card>
         <CardHeader>
-          <CardTitle>Zweryfikuj e-mail</CardTitle>
+          <CardTitle>
+            {urlToken ? "Aktywacja konta" : "Sprawdz skrzynke e-mail"}
+          </CardTitle>
           <CardDescription>
-            Wklej token z maila lub z developerskiego podglądu, aby aktywować konto.
+            {urlToken
+              ? "Jesli link jest poprawny, potwierdzimy konto automatycznie."
+              : "Link aktywacyjny wysylamy na e-mail podany przy rejestracji."}
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <form
-            className="space-y-5"
-            onSubmit={verifyForm.handleSubmit((values) =>
-              verifyMutation.mutate(values)
-            )}
-          >
-            <div>
-              <Label htmlFor="verification-token">Token weryfikacji</Label>
-              <Input id="verification-token" {...verifyForm.register("token")} />
-              <FieldError message={verifyForm.formState.errors.token?.message} />
-            </div>
-            <FieldError
-              message={
-                verifyMutation.isError
-                  ? getApiErrorMessage(verifyMutation.error)
-                  : undefined
-              }
-            />
-            <Button
-              className="w-full"
-              size="lg"
-              type="submit"
-              disabled={verifyMutation.isPending}
-            >
-              {verifyMutation.isPending ? "Weryfikacja..." : "Aktywuj konto"}
-            </Button>
-          </form>
-          {verifyMutation.isSuccess ? (
-            <div className="mt-6 rounded-3xl bg-[color:var(--surface)] p-4 text-sm leading-6 text-[color:var(--foreground-muted)]">
-              <p className="font-semibold text-[color:var(--accent-strong)]">
-                {verifyMutation.data.message}
-              </p>
-              <p className="mt-2">
-                Teraz możesz przejść do{" "}
-                <Link className="font-semibold text-[color:var(--accent-strong)]" href="/login">
-                  logowania
-                </Link>
-                .
-              </p>
-            </div>
-          ) : null}
+        <CardContent className="space-y-4 text-sm leading-7 text-[color:var(--foreground-muted)]">
+          {urlToken ? (
+            <>
+              {verifyMutation.isPending ? (
+                <p>Trwa potwierdzanie konta. To powinno zajac tylko chwile.</p>
+              ) : null}
+              {verifyMutation.isSuccess ? (
+                <>
+                  <p className="font-semibold text-[color:var(--accent-strong)]">
+                    {verifyMutation.data.message}
+                  </p>
+                  <p>
+                    Po zatwierdzeniu przez moderatora przejdziesz do{" "}
+                    <Link
+                      className="font-semibold text-[color:var(--accent-strong)]"
+                      href="/login"
+                    >
+                      logowania
+                    </Link>
+                    .
+                  </p>
+                </>
+              ) : null}
+              {verifyMutation.isError ? (
+                <p className="text-[#9d3d2d]">
+                  {getApiErrorMessage(verifyMutation.error)}
+                </p>
+              ) : null}
+            </>
+          ) : (
+            <p>
+              Otworz wiadomosc i kliknij link aktywacyjny. Jesli mail nie dotarl,
+              mozesz od razu wyslac go ponownie nizej.
+            </p>
+          )}
         </CardContent>
       </Card>
+
       <Card>
         <CardHeader>
-          <CardTitle>Wyślij link ponownie</CardTitle>
+          <CardTitle>Wyslij link ponownie</CardTitle>
           <CardDescription>
-            Jeśli zgubiłeś token, podaj e-mail i wygeneruj nową instrukcję weryfikacji.
+            Jesli wiadomosc nie dotarla albo link wygasl, podaj e-mail i wyslij nowa
+            wiadomosc aktywacyjna.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -158,17 +144,12 @@ export function VerifyEmailPanel() {
               variant="secondary"
               disabled={requestMutation.isPending}
             >
-              {requestMutation.isPending ? "Wysyłanie..." : "Wyślij ponownie"}
+              {requestMutation.isPending ? "Wysylanie..." : "Wyslij ponownie"}
             </Button>
           </form>
           {requestMutation.isSuccess ? (
             <div className="mt-6 rounded-3xl bg-[color:var(--surface)] p-4 text-sm leading-6 text-[color:var(--foreground-muted)]">
               <p>{requestMutation.data.message}</p>
-              {devToken ? (
-                <p className="mt-3 break-all font-semibold text-[color:var(--accent-strong)]">
-                  Token developerski: {devToken}
-                </p>
-              ) : null}
             </div>
           ) : null}
         </CardContent>

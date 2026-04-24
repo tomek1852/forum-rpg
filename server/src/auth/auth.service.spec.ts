@@ -162,7 +162,7 @@ describe("AuthService", () => {
         username: pendingUser.username,
       }),
     );
-    expect(result.message).toContain("Zweryfikuj email");
+    expect(result.message).toContain("Zweryfikuj e-mail");
     expect(result.user.username).toBe("hero");
   });
 
@@ -197,10 +197,25 @@ describe("AuthService", () => {
         identifier: "test@example.com",
         password: "supersecret",
       }),
-    ).rejects.toThrow("Zweryfikuj email");
+    ).rejects.toThrow("Zweryfikuj e-mail");
   });
 
-  it("verifies email token and activates account", async () => {
+  it("blocks login for accounts waiting for approval", async () => {
+    usersService.findByEmailOrUsername.mockResolvedValueOnce({
+      ...user,
+      status: AccountStatus.PENDING_APPROVAL,
+      emailVerified: true,
+    });
+
+    await expect(
+      service.login({
+        identifier: "test@example.com",
+        password: "supersecret",
+      }),
+    ).rejects.toThrow("Konto czeka na zatwierdzenie");
+  });
+
+  it("verifies email token and keeps the account pending approval", async () => {
     prisma.emailVerificationToken.findUnique.mockResolvedValueOnce({
       id: "verify-1",
       userId: "user-1",
@@ -217,6 +232,6 @@ describe("AuthService", () => {
     });
 
     expect(prisma.$transaction).toHaveBeenCalled();
-    expect(result.message).toContain("Mozesz sie teraz zalogowac");
+    expect(result.message).toContain("Konto czeka teraz na zatwierdzenie");
   });
 });

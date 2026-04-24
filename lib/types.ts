@@ -176,6 +176,15 @@ export interface NotificationsResponse {
   unreadCount: number;
 }
 
+export interface ModerationAccountsResponse {
+  users: User[];
+}
+
+export interface ModerationAccountMutationResponse {
+  message: string;
+  user: User;
+}
+
 export interface LoginPayload {
   identifier: string;
   password: string;
@@ -230,4 +239,12 @@ export interface ForumThreadPayload {
 export interface ForumReplyPayload {
   content: string;
   quotePostId?: string;
+}
+
+export interface UpdateAccountStatusPayload {
+  status: AccountStatus;
+}
+
+export interface UpdateUserRolePayload {
+  role: Role;
 }

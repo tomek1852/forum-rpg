@@ -52,3 +52,12 @@
 - Powiadomienia forum moga wysylac rowniez kopie emailowe do aktywnych i zweryfikowanych odbiorcow.
 - Zaktualizowano `server/.env.example` o `APP_URL`, `MAIL_FROM_*` i ustawienia `SMTP_*`.
 - Zweryfikowano iteracje poleceniami: `npm --prefix server run test`, `npm --prefix server run build`.
+
+## 2026-04-24 - ETAP 1 - workflow zatwierdzania kont - DONE
+
+- Zmieniono flow auth tak, aby po weryfikacji email konto pozostawalo w `PENDING_APPROVAL` do czasu zatwierdzenia przez `GM` lub `Admin`.
+- Dodano backendowe endpointy moderacyjne do listy kont, zmiany statusu (`PENDING_APPROVAL` / `ACTIVE` / `BLOCKED`) oraz zmiany roli uzytkownika dla administratora.
+- Dodano frontendowy panel `moderation` z podgladem kont oczekujacych, akcjami aktywacji i blokowania oraz zarzadzaniem rolami.
+- Dashboard dostal bezposredni skrot do moderacji dla uzytkownikow z rola `GM` lub `ADMIN`.
+- Poprawiono widoki auth tak, aby opisy odpowiadaly nowemu przeplywowi zatwierdzania kont.
+- Zweryfikowano iteracje poleceniami: `npm --prefix server run test`, `npm --prefix server run build`, `npm run lint`, `npm run test:web`, `npm run build:web`.

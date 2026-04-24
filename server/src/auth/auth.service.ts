@@ -100,7 +100,7 @@ export class AuthService {
 
     return {
       message:
-        "Konto zostalo utworzone. Zweryfikuj email, aby aktywowac konto.",
+        "Konto zostalo utworzone. Zweryfikuj e-mail, aby przejsc do zatwierdzenia konta.",
       user: this.usersService.toPublicUser(user),
       developmentVerificationToken:
         process.env.NODE_ENV === "production" ? undefined : verificationToken,
@@ -119,9 +119,13 @@ export class AuthService {
       throw new UnauthorizedException("Konto jest zablokowane.");
     }
 
-    if (!user.emailVerified || user.status !== AccountStatus.ACTIVE) {
+    if (!user.emailVerified) {
+      throw new UnauthorizedException("Zweryfikuj e-mail przed logowaniem.");
+    }
+
+    if (user.status === AccountStatus.PENDING_APPROVAL) {
       throw new UnauthorizedException(
-        "Zweryfikuj email i aktywuj konto przed logowaniem.",
+        "Konto czeka na zatwierdzenie przez MG lub administratora.",
       );
     }
 
@@ -145,13 +149,16 @@ export class AuthService {
     if (!user) {
       return {
         message:
-          "Jesli konto istnieje, wyslalismy nowa instrukcje weryfikacji email.",
+          "Jesli konto istnieje, wyslalismy nowa instrukcje weryfikacji e-mail.",
       };
     }
 
-    if (user.emailVerified && user.status === AccountStatus.ACTIVE) {
+    if (user.emailVerified) {
       return {
-        message: "To konto ma juz zweryfikowany adres email.",
+        message:
+          user.status === AccountStatus.PENDING_APPROVAL
+            ? "Adres e-mail jest juz zweryfikowany. Konto czeka na zatwierdzenie."
+            : "To konto ma juz zweryfikowany adres e-mail.",
       };
     }
 
@@ -164,7 +171,7 @@ export class AuthService {
 
     return {
       message:
-        "Jesli konto istnieje, wyslalismy nowa instrukcje weryfikacji email.",
+        "Jesli konto istnieje, wyslalismy nowa instrukcje weryfikacji e-mail.",
       developmentVerificationToken:
         process.env.NODE_ENV === "production" ? undefined : verificationToken,
     };
@@ -183,7 +190,7 @@ export class AuthService {
       verificationEntry.usedAt ||
       verificationEntry.expiresAt.getTime() <= Date.now()
     ) {
-      throw new BadRequestException("Token weryfikacji email jest nieprawidlowy.");
+      throw new BadRequestException("Token weryfikacji e-mail jest nieprawidlowy.");
     }
 
     const now = new Date();
@@ -193,7 +200,6 @@ export class AuthService {
         where: { id: verificationEntry.userId },
         data: {
           emailVerified: true,
-          status: AccountStatus.ACTIVE,
         },
       }),
       this.prisma.emailVerificationToken.update({
@@ -211,7 +217,8 @@ export class AuthService {
     ]);
 
     return {
-      message: "Email zostal zweryfikowany. Mozesz sie teraz zalogowac.",
+      message:
+        "Adres e-mail zostal zweryfikowany. Konto czeka teraz na zatwierdzenie przez MG lub administratora.",
     };
   }
 
@@ -267,8 +274,7 @@ export class AuthService {
 
     if (!user) {
       return {
-        message:
-          "Jezeli konto istnieje, wyslalismy instrukcje resetu hasla.",
+        message: "Jezeli konto istnieje, wyslalismy instrukcje resetu hasla.",
       };
     }
 
@@ -289,9 +295,7 @@ export class AuthService {
       data: {
         tokenHash,
         userId: user.id,
-        expiresAt: new Date(
-          Date.now() + this.resetTokenTtlMinutes * 60_000,
-        ),
+        expiresAt: new Date(Date.now() + this.resetTokenTtlMinutes * 60_000),
       },
     });
 
@@ -302,8 +306,7 @@ export class AuthService {
     });
 
     return {
-      message:
-        "Jezeli konto istnieje, wyslalismy instrukcje resetu hasla.",
+      message: "Jezeli konto istnieje, wyslalismy instrukcje resetu hasla.",
       developmentResetToken:
         process.env.NODE_ENV === "production" ? undefined : rawToken,
     };
@@ -369,9 +372,7 @@ export class AuthService {
       data: {
         tokenHash: this.hashToken(randomBytes(32).toString("hex")),
         userId: user.id,
-        expiresAt: new Date(
-          Date.now() + ttlToMilliseconds(this.refreshTokenTtl),
-        ),
+        expiresAt: new Date(Date.now() + ttlToMilliseconds(this.refreshTokenTtl)),
       },
     });
 
@@ -442,12 +443,9 @@ export class AuthService {
 
   private async verifyRefreshToken(refreshToken: string) {
     try {
-      return await this.jwtService.verifyAsync<RefreshTokenPayload>(
-        refreshToken,
-        {
-          secret: this.refreshTokenSecret,
-        },
-      );
+      return await this.jwtService.verifyAsync<RefreshTokenPayload>(refreshToken, {
+        secret: this.refreshTokenSecret,
+      });
     } catch {
       throw new UnauthorizedException("Refresh token jest nieprawidlowy.");
     }

@@ -16,15 +16,21 @@ import type {
   ForumThreadResponse,
   NotificationsResponse,
   LoginPayload,
+  ModerationAccountsResponse,
+  ModerationAccountMutationResponse,
   RegisterResponse,
   RegisterPayload,
   RequestEmailVerificationPayload,
   RequestPasswordResetPayload,
   ResetPasswordPayload,
+  Role,
   UpdateProfilePayload,
+  UpdateAccountStatusPayload,
+  UpdateUserRolePayload,
   UserProfileResponse,
   VerificationResponse,
   VerifyEmailPayload,
+  AccountStatus,
 } from "./types";
 
 const baseURL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001/api";
@@ -268,6 +274,34 @@ export async function markAllNotificationsAsRead() {
     message: string;
     unreadCount: number;
   }>("/notifications/read-all");
+  return data;
+}
+
+export async function getModerationAccounts() {
+  const { data } = await api.get<ModerationAccountsResponse>(
+    "/users/moderation/accounts",
+  );
+  return data;
+}
+
+export async function updateModerationAccountStatus(
+  userId: string,
+  status: AccountStatus,
+) {
+  const payload: UpdateAccountStatusPayload = { status };
+  const { data } = await api.patch<ModerationAccountMutationResponse>(
+    `/users/moderation/accounts/${userId}/status`,
+    payload,
+  );
+  return data;
+}
+
+export async function updateModerationUserRole(userId: string, role: Role) {
+  const payload: UpdateUserRolePayload = { role };
+  const { data } = await api.patch<ModerationAccountMutationResponse>(
+    `/users/moderation/accounts/${userId}/role`,
+    payload,
+  );
   return data;
 }
 

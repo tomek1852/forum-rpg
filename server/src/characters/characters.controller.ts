@@ -1,10 +1,21 @@
-import { Body, Controller, Get, Inject, Param, Patch, Post, UseGuards } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  Get,
+  Inject,
+  Param,
+  Patch,
+  Post,
+  Query,
+  UseGuards,
+} from "@nestjs/common";
 import { CurrentUser } from "../common/decorators/current-user.decorator";
 import { Roles } from "../common/decorators/roles.decorator";
 import { JwtAuthGuard } from "../common/guards/jwt-auth.guard";
 import { RolesGuard } from "../common/guards/roles.guard";
 import { CharactersService } from "./characters.service";
 import { AddProgressDto } from "./dto/add-progress.dto";
+import { CharacterRankingQueryDto } from "./dto/character-ranking-query.dto";
 import { CreateCharacterDto } from "./dto/create-character.dto";
 import { UpdateCharacterDto } from "./dto/update-character.dto";
 
@@ -24,6 +35,11 @@ export class CharactersController {
   @Get("user/:userId")
   listByUser(@Param("userId") userId: string) {
     return this.charactersService.listByOwner(userId);
+  }
+
+  @Get("rankings")
+  listRankings(@Query() query: CharacterRankingQueryDto) {
+    return this.charactersService.listRankings(query);
   }
 
   @Post()

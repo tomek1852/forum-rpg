@@ -154,6 +154,147 @@ describe("CharactersService", () => {
     expect(result.character.experiencePoints).toBe(5);
   });
 
+  it("returns rankings sorted by EXP and PH", async () => {
+    prisma.character.findMany.mockResolvedValueOnce([
+      {
+        id: "char-2",
+        name: "Bastion",
+        experiencePoints: 12,
+        heroPoints: 5,
+        world: {
+          id: "world-1",
+          name: "Arbor",
+          slug: "arbor",
+        },
+      },
+      {
+        id: "char-1",
+        name: "Aster",
+        experiencePoints: 12,
+        heroPoints: 3,
+        world: {
+          id: "world-1",
+          name: "Arbor",
+          slug: "arbor",
+        },
+      },
+      {
+        id: "char-3",
+        name: "Cinder",
+        experiencePoints: 8,
+        heroPoints: 9,
+        world: {
+          id: "world-2",
+          name: "Nox",
+          slug: "nox",
+        },
+      },
+    ]);
+
+    const result = await service.listRankings({ worldId: "world-1" });
+
+    expect(prisma.character.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          isPublic: true,
+          worldId: "world-1",
+        },
+        orderBy: [{ experiencePoints: "desc" }, { heroPoints: "desc" }, { name: "asc" }],
+      }),
+    );
+    expect(result.rankings).toEqual([
+      expect.objectContaining({
+        position: 1,
+        characterId: "char-2",
+        experiencePoints: 12,
+        heroPoints: 5,
+      }),
+      expect.objectContaining({
+        position: 2,
+        characterId: "char-1",
+        experiencePoints: 12,
+        heroPoints: 3,
+      }),
+      expect.objectContaining({
+        position: 3,
+        characterId: "char-3",
+        experiencePoints: 8,
+        heroPoints: 9,
+      }),
+    ]);
+  });
+
+  it("reflects updated counters in rankings after granting progress", async () => {
+    const tx = {
+      character: {
+        findUnique: jest.fn().mockResolvedValueOnce({ id: "char-1" }),
+        update: jest.fn().mockResolvedValueOnce({
+          id: "char-1",
+          ownerId: "user-1",
+          name: "Aster",
+          experiencePoints: 6,
+          heroPoints: 2,
+          statValues: [],
+        }),
+      },
+      progressEntry: {
+        create: jest.fn().mockResolvedValueOnce({
+          id: "progress-1",
+          characterId: "char-1",
+          expDelta: 4,
+          phDelta: 2,
+          reason: "Sesja",
+        }),
+      },
+    };
+    prisma.$transaction.mockImplementationOnce((callback) => callback(tx));
+    prisma.character.findMany.mockResolvedValueOnce([
+      {
+        id: "char-1",
+        name: "Aster",
+        experiencePoints: 6,
+        heroPoints: 2,
+        world: {
+          id: "world-1",
+          name: "Arbor",
+          slug: "arbor",
+        },
+      },
+      {
+        id: "char-2",
+        name: "Bastion",
+        experiencePoints: 5,
+        heroPoints: 4,
+        world: {
+          id: "world-1",
+          name: "Arbor",
+          slug: "arbor",
+        },
+      },
+    ]);
+
+    await service.grantProgress(
+      "char-1",
+      { userId: "gm-1", role: "GM" },
+      {
+        expDelta: 4,
+        phDelta: 2,
+        reason: "Sesja",
+      },
+    );
+
+    const result = await service.listRankings();
+
+    expect(result.rankings[0]).toEqual(
+      expect.objectContaining({
+        position: 1,
+        characterId: "char-1",
+        experiencePoints: 6,
+        heroPoints: 2,
+      }),
+    );
+  });
+
   it("returns progress history for the character owner", async () => {
     prisma.character.findUnique.mockResolvedValueOnce({
       id: "char-1",

@@ -7,6 +7,7 @@ import type {
   AddProgressPayload,
   AuthResponse,
   CharacterPayload,
+  CharacterRankingsResponse,
   CharacterResponse,
   CharactersResponse,
   CreateSkillProposalPayload,
@@ -210,6 +211,12 @@ export async function getCharactersByUser(userId: string) {
 
 export async function getCharacter(characterId: string) {
   const { data } = await api.get<CharacterResponse>(`/characters/${characterId}`);
+  return data;
+}
+
+export async function getCharacterRankings(worldId?: string) {
+  const query = worldId ? `?${new URLSearchParams({ worldId }).toString()}` : "";
+  const { data } = await api.get<CharacterRankingsResponse>(`/characters/rankings${query}`);
   return data;
 }
 

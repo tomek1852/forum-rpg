@@ -38,6 +38,7 @@ export function ProgressGrantForm({ characterId }: { characterId: string }) {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["character", characterId] }),
         queryClient.invalidateQueries({ queryKey: ["character-progress", characterId] }),
+        queryClient.invalidateQueries({ queryKey: ["character-rankings"] }),
       ]);
     },
   });

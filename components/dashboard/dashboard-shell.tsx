@@ -114,6 +114,9 @@ export function DashboardShell() {
               <Button asChild size="lg" variant="secondary">
                 <Link href="/notifications">Powiadomienia</Link>
               </Button>
+              <Button asChild size="lg" variant="secondary">
+                <Link href="/rankings">Ranking</Link>
+              </Button>
               {canModerate ? (
                 <Button asChild size="lg" variant="secondary">
                   <Link href="/moderation">Moderacja</Link>

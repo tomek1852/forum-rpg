@@ -8,6 +8,7 @@ import {
 import { Character, Prisma, SkillProposalStatus, StatValueType } from "@prisma/client";
 import { PrismaService } from "../prisma/prisma.service";
 import { AddProgressDto } from "./dto/add-progress.dto";
+import { CharacterRankingQueryDto } from "./dto/character-ranking-query.dto";
 import { CreateCharacterDto } from "./dto/create-character.dto";
 import { CharacterStatValueInputDto } from "./dto/character-stat-value-input.dto";
 import { UpdateCharacterDto } from "./dto/update-character.dto";
@@ -118,6 +119,40 @@ export class CharactersService {
       characters: characters.map((character) =>
         this.serializeCharacter(character, { includeProposals: false }),
       ),
+    };
+  }
+
+  async listRankings(query: CharacterRankingQueryDto = {}) {
+    const characters = await this.prisma.character.findMany({
+      where: {
+        isPublic: true,
+        ...(query.worldId ? { worldId: query.worldId } : {}),
+      },
+      select: {
+        id: true,
+        name: true,
+        experiencePoints: true,
+        heroPoints: true,
+        world: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+          },
+        },
+      },
+      orderBy: [{ experiencePoints: "desc" }, { heroPoints: "desc" }, { name: "asc" }],
+    });
+
+    return {
+      rankings: characters.map((character, index) => ({
+        position: index + 1,
+        characterId: character.id,
+        name: character.name,
+        world: character.world,
+        experiencePoints: character.experiencePoints,
+        heroPoints: character.heroPoints,
+      })),
     };
   }
 

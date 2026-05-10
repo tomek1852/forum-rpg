@@ -82,5 +82,8 @@
 - Zaimplementowano backendowy flow przyznawania progresu przez `GM` lub `ADMIN`: wpis historii powstaje w transakcji razem z automatyczna aktualizacja licznikow postaci.
 - Dodano endpointy `GET /characters/:characterId/progress` i `POST /characters/:characterId/progress`; historia jest dostepna dla wlasciciela postaci oraz `GM/Admin`.
 - Karta postaci pokazuje teraz EXP i PH, a `GM/Admin` widza prosty panel przyznawania progresu oraz historie zmian.
+- Dodano podstawowy ranking postaci dla ETAPU 2: endpoint `GET /characters/rankings` sortuje po `EXP` i `PH`, obsluguje filtr `worldId` i zwraca pozycje w tabeli.
+- Dodano frontendowy widok `/rankings` z lista postaci, swiatem, licznikami `EXP/PH`, pozycja w rankingu oraz skrotem z dashboardu.
+- Cache rankingu odswieza sie po przyznaniu progresu, a backendowe testy obejmuja kolejnosc endpointu i aktualizacje rankingu po zmianie licznikow.
 - Dodano testy backendowe dla zwiekszania EXP/PH, historii progresu oraz blokady dostepu dla zwyklych graczy.
 - Zweryfikowano iteracje poleceniami: `npm --prefix server run test`, `npm --prefix server run build`, `npm run lint`, `npm run test:web`, `npm run build:web`.

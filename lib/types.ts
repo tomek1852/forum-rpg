@@ -188,6 +188,19 @@ export interface CharacterResponse {
   character: Character;
 }
 
+export interface CharacterRankingEntry {
+  position: number;
+  characterId: string;
+  name: string;
+  world: Pick<World, "id" | "name" | "slug"> | null;
+  experiencePoints: number;
+  heroPoints: number;
+}
+
+export interface CharacterRankingsResponse {
+  rankings: CharacterRankingEntry[];
+}
+
 export interface ProgressMutationResponse {
   message: string;
   entry: ProgressEntry;

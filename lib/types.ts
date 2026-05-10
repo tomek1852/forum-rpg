@@ -88,6 +88,36 @@ export interface CharacterSkill {
   sourceProposalId: string | null;
 }
 
+export interface ProgressRule {
+  id: string;
+  code: string;
+  label: string;
+  description: string | null;
+  expValue: number;
+  phValue: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ProgressEntry {
+  id: string;
+  expDelta: number;
+  phDelta: number;
+  reason: string;
+  note: string | null;
+  createdAt: string;
+  characterId: string;
+  grantedById: string | null;
+  ruleId: string | null;
+  grantedBy: {
+    id: string;
+    username: string;
+    displayName: string | null;
+  } | null;
+  rule: ProgressRule | null;
+}
+
 export interface SkillProposal {
   id: string;
   name: string;
@@ -142,6 +172,8 @@ export interface Character {
   appearance: string | null;
   avatarUrl: string | null;
   statsJson: Record<string, string | number> | null;
+  experiencePoints: number;
+  heroPoints: number;
   world: Pick<World, "id" | "name" | "slug"> | null;
   statValues: CharacterStatValue[];
   skills: CharacterSkill[];
@@ -154,6 +186,16 @@ export interface Character {
 
 export interface CharacterResponse {
   character: Character;
+}
+
+export interface ProgressMutationResponse {
+  message: string;
+  entry: ProgressEntry;
+  character: Character;
+}
+
+export interface ProgressHistoryResponse {
+  entries: ProgressEntry[];
 }
 
 export interface CharactersResponse {
@@ -390,6 +432,13 @@ export interface CreateSkillProposalPayload {
 export interface ReviewSkillProposalPayload {
   status: SkillProposalStatus;
   reviewerComment?: string;
+}
+
+export interface AddProgressPayload {
+  expDelta?: number;
+  phDelta?: number;
+  reason: string;
+  note?: string;
 }
 
 export interface ForumThreadPayload {

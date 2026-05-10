@@ -3,6 +3,7 @@ import { CharactersService } from "./characters.service";
 
 describe("CharactersService", () => {
   const prisma = {
+    $transaction: jest.fn(),
     world: {
       findUnique: jest.fn(),
     },
@@ -12,6 +13,12 @@ describe("CharactersService", () => {
       findUnique: jest.fn(),
       findUniqueOrThrow: jest.fn(),
       update: jest.fn(),
+    },
+    progressRule: {
+      findUnique: jest.fn(),
+    },
+    progressEntry: {
+      findMany: jest.fn(),
     },
   };
 
@@ -75,5 +82,131 @@ describe("CharactersService", () => {
     await expect(service.getById("missing", "user-1")).rejects.toBeInstanceOf(
       NotFoundException,
     );
+  });
+
+  it("allows a GM to view a private character", async () => {
+    prisma.character.findUnique.mockResolvedValueOnce({
+      id: "char-1",
+      ownerId: "user-1",
+      isPublic: false,
+      statValues: [],
+    });
+
+    const result = await service.getById("char-1", "gm-1", "GM");
+
+    expect(result.character.id).toBe("char-1");
+  });
+
+  it("grants progress and updates character counters", async () => {
+    const tx = {
+      character: {
+        findUnique: jest.fn().mockResolvedValueOnce({ id: "char-1" }),
+        update: jest.fn().mockResolvedValueOnce({
+          id: "char-1",
+          ownerId: "user-1",
+          name: "Aster",
+          experiencePoints: 5,
+          heroPoints: 1,
+          statValues: [],
+        }),
+      },
+      progressEntry: {
+        create: jest.fn().mockResolvedValueOnce({
+          id: "progress-1",
+          characterId: "char-1",
+          expDelta: 5,
+          phDelta: 1,
+          reason: "Sesja",
+        }),
+      },
+    };
+    prisma.$transaction.mockImplementationOnce((callback) => callback(tx));
+
+    const result = await service.grantProgress(
+      "char-1",
+      { userId: "gm-1", role: "GM" },
+      {
+        expDelta: 5,
+        phDelta: 1,
+        reason: "Sesja",
+      },
+    );
+
+    expect(tx.progressEntry.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          characterId: "char-1",
+          grantedById: "gm-1",
+          expDelta: 5,
+          phDelta: 1,
+          reason: "Sesja",
+        }),
+      }),
+    );
+    expect(tx.character.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: {
+          experiencePoints: { increment: 5 },
+          heroPoints: { increment: 1 },
+        },
+      }),
+    );
+    expect(result.character.experiencePoints).toBe(5);
+  });
+
+  it("returns progress history for the character owner", async () => {
+    prisma.character.findUnique.mockResolvedValueOnce({
+      id: "char-1",
+      ownerId: "user-1",
+    });
+    prisma.progressEntry.findMany.mockResolvedValueOnce([
+      {
+        id: "progress-1",
+        characterId: "char-1",
+        expDelta: 3,
+        phDelta: 0,
+        reason: "Aktywna gra",
+      },
+    ]);
+
+    const result = await service.listProgressHistory("char-1", {
+      userId: "user-1",
+      role: "PLAYER",
+    });
+
+    expect(prisma.progressEntry.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { characterId: "char-1" },
+        orderBy: { createdAt: "desc" },
+      }),
+    );
+    expect(result.entries).toHaveLength(1);
+  });
+
+  it("blocks progress grants from regular players", async () => {
+    await expect(
+      service.grantProgress(
+        "char-1",
+        { userId: "user-1", role: "PLAYER" },
+        {
+          expDelta: 1,
+          reason: "Sesja",
+        },
+      ),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+  });
+
+  it("blocks progress history for other players", async () => {
+    prisma.character.findUnique.mockResolvedValueOnce({
+      id: "char-1",
+      ownerId: "user-2",
+    });
+
+    await expect(
+      service.listProgressHistory("char-1", {
+        userId: "user-1",
+        role: "PLAYER",
+      }),
+    ).rejects.toBeInstanceOf(ForbiddenException);
   });
 });

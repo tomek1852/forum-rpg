@@ -29,6 +29,10 @@ export function CharacterCard({
           {character.summary ??
             "Brak krótkiego opisu. Uzupełnij szczegóły postaci, aby lepiej prezentowała się w profilu."}
         </p>
+        <div className="flex flex-wrap gap-2">
+          <Badge>EXP: {character.experiencePoints}</Badge>
+          <Badge>PH: {character.heroPoints}</Badge>
+        </div>
         <div className="flex gap-3 text-sm font-semibold">
           <Link className="text-[color:var(--accent-strong)]" href={`/character/${character.id}`}>
             Szczegóły

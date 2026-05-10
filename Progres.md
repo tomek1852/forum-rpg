@@ -75,3 +75,12 @@
 - Powiadomienia in-app i e-mail obejmuja teraz rowniez nowe propozycje umiejetnosci oraz decyzje o ich zatwierdzeniu lub odrzuceniu.
 - Zweryfikowano iteracje poleceniami: `npm --prefix server run prisma:generate`, `npm --prefix server run build`, `npm --prefix server run test`, `npm run lint`, `npm run test:web`, `npm run build:web`.
 - Zweryfikowano rowniez lokalny flow Prisma na PostgreSQL pod `localhost:5433`: migracje `202605041930_worlds_stats` i `202605042100_skill_workflow` aplikuja sie poprawnie na czystej bazie, `prisma migrate status` jest zielone, a `npm --prefix server run prisma:migrate:dev` przechodzi bez bledu.
+
+## 2026-05-10 - ETAP 2 - progres postaci EXP/PH - IN PROGRESS
+
+- Dodano modele `ProgressEntry` i `ProgressRule` oraz liczniki `experiencePoints` i `heroPoints` na modelu `Character`.
+- Zaimplementowano backendowy flow przyznawania progresu przez `GM` lub `ADMIN`: wpis historii powstaje w transakcji razem z automatyczna aktualizacja licznikow postaci.
+- Dodano endpointy `GET /characters/:characterId/progress` i `POST /characters/:characterId/progress`; historia jest dostepna dla wlasciciela postaci oraz `GM/Admin`.
+- Karta postaci pokazuje teraz EXP i PH, a `GM/Admin` widza prosty panel przyznawania progresu oraz historie zmian.
+- Dodano testy backendowe dla zwiekszania EXP/PH, historii progresu oraz blokady dostepu dla zwyklych graczy.
+- Zweryfikowano iteracje poleceniami: `npm --prefix server run test`, `npm --prefix server run build`, `npm run lint`, `npm run test:web`, `npm run build:web`.

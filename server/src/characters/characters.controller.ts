@@ -1,7 +1,10 @@
 import { Body, Controller, Get, Inject, Param, Patch, Post, UseGuards } from "@nestjs/common";
 import { CurrentUser } from "../common/decorators/current-user.decorator";
+import { Roles } from "../common/decorators/roles.decorator";
 import { JwtAuthGuard } from "../common/guards/jwt-auth.guard";
+import { RolesGuard } from "../common/guards/roles.guard";
 import { CharactersService } from "./characters.service";
+import { AddProgressDto } from "./dto/add-progress.dto";
 import { CreateCharacterDto } from "./dto/create-character.dto";
 import { UpdateCharacterDto } from "./dto/update-character.dto";
 
@@ -37,6 +40,25 @@ export class CharactersController {
     @CurrentUser() user: { userId: string; role?: string },
   ) {
     return this.charactersService.getById(characterId, user.userId, user.role);
+  }
+
+  @Get(":characterId/progress")
+  listProgressHistory(
+    @Param("characterId") characterId: string,
+    @CurrentUser() user: { userId: string; role?: string },
+  ) {
+    return this.charactersService.listProgressHistory(characterId, user);
+  }
+
+  @Post(":characterId/progress")
+  @UseGuards(RolesGuard)
+  @Roles("GM", "ADMIN")
+  grantProgress(
+    @Param("characterId") characterId: string,
+    @CurrentUser() user: { userId: string; role?: string },
+    @Body() dto: AddProgressDto,
+  ) {
+    return this.charactersService.grantProgress(characterId, user, dto);
   }
 
   @Patch(":characterId")

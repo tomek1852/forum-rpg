@@ -7,9 +7,10 @@ import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { getApiErrorMessage, getCharacter } from "@/lib/api";
+import { getApiErrorMessage, getCharacter, getCharacterProgress } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
-import type { CharacterSkill, SkillProposal, SkillProposalStatus } from "@/lib/types";
+import type { CharacterSkill, ProgressEntry, SkillProposal, SkillProposalStatus } from "@/lib/types";
+import { ProgressGrantForm } from "./progress-grant-form";
 import { SkillProposalForm } from "./skill-proposal-form";
 
 export function CharacterDetailShell({ characterId }: { characterId: string }) {
@@ -20,6 +21,20 @@ export function CharacterDetailShell({ characterId }: { characterId: string }) {
     queryKey: ["character", characterId],
     queryFn: () => getCharacter(characterId),
     enabled: hydrated && Boolean(accessToken),
+  });
+
+  const progressQuery = useQuery({
+    queryKey: ["character-progress", characterId],
+    queryFn: () => getCharacterProgress(characterId),
+    enabled:
+      hydrated &&
+      Boolean(accessToken) &&
+      Boolean(user) &&
+      Boolean(query.data?.character) &&
+      (user?.role === "GM" ||
+        user?.role === "ADMIN" ||
+        user?.id === query.data?.character.ownerId),
+    retry: false,
   });
 
   useEffect(() => {
@@ -39,6 +54,8 @@ export function CharacterDetailShell({ characterId }: { characterId: string }) {
   const character = query.data.character;
   const isOwner = user?.id === character.ownerId;
   const canReviewSkills = user?.role === "GM" || user?.role === "ADMIN";
+  const canManageProgress = canReviewSkills;
+  const canViewProgress = isOwner || canManageProgress;
   const stats =
     character.statValues.length > 0
       ? character.statValues.map((statValue) => ({
@@ -74,15 +91,21 @@ export function CharacterDetailShell({ characterId }: { characterId: string }) {
                 </p>
               </div>
             </div>
-            <div className="flex gap-3">
-              {isOwner ? (
-                <Button asChild size="lg" variant="secondary">
-                  <Link href={`/character/${character.id}/edit`}>Edytuj</Link>
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <ProgressBadge label="EXP" value={character.experiencePoints} />
+                <ProgressBadge label="PH" value={character.heroPoints} />
+              </div>
+              <div className="flex gap-3">
+                {isOwner ? (
+                  <Button asChild size="lg" variant="secondary">
+                    <Link href={`/character/${character.id}/edit`}>Edytuj</Link>
+                  </Button>
+                ) : null}
+                <Button asChild size="lg">
+                  <Link href={`/profile/${character.ownerId}`}>Profil gracza</Link>
                 </Button>
-              ) : null}
-              <Button asChild size="lg">
-                <Link href={`/profile/${character.ownerId}`}>Profil gracza</Link>
-              </Button>
+              </div>
             </div>
           </div>
         </header>
@@ -139,6 +162,31 @@ export function CharacterDetailShell({ characterId }: { characterId: string }) {
             </CardContent>
           </Card>
         </div>
+
+        {canViewProgress ? (
+          <section
+            className={`grid gap-6 ${canManageProgress ? "lg:grid-cols-[0.9fr_1.1fr]" : ""}`}
+          >
+            {canManageProgress ? (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Przyznaj progres</CardTitle>
+                  <CardDescription>
+                    Dodaj punkty EXP lub PH. Liczniki postaci zaktualizują się automatycznie.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ProgressGrantForm characterId={character.id} />
+                </CardContent>
+              </Card>
+            ) : null}
+            <ProgressHistoryCard
+              entries={progressQuery.data?.entries ?? []}
+              isLoading={progressQuery.isLoading}
+              error={progressQuery.isError ? getApiErrorMessage(progressQuery.error) : undefined}
+            />
+          </section>
+        ) : null}
 
         <section className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
           <Card>
@@ -199,6 +247,69 @@ export function CharacterDetailShell({ characterId }: { characterId: string }) {
         ) : null}
       </div>
     </div>
+  );
+}
+
+function ProgressBadge({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="rounded-[24px] border border-[color:var(--border)] bg-white/70 px-5 py-4 text-center">
+      <div className="text-xs uppercase tracking-[0.24em] text-[color:var(--foreground-subtle)]">
+        {label}
+      </div>
+      <div className="mt-1 font-display text-3xl text-[color:var(--foreground)]">{value}</div>
+    </div>
+  );
+}
+
+function ProgressHistoryCard({
+  entries,
+  isLoading,
+  error,
+}: {
+  entries: ProgressEntry[];
+  isLoading: boolean;
+  error?: string;
+}) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Historia progresu</CardTitle>
+        <CardDescription>Ostatnie przyznane punkty EXP i PH dla tej postaci.</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {isLoading ? (
+          <p className="text-sm text-[color:var(--foreground-muted)]">Ładowanie historii...</p>
+        ) : null}
+        {error ? <p className="text-sm text-[#9d3d2d]">{error}</p> : null}
+        {!isLoading && !error && entries.length === 0 ? (
+          <p className="text-sm text-[color:var(--foreground-muted)]">
+            Ta postać nie ma jeszcze wpisów progresu.
+          </p>
+        ) : null}
+        {entries.map((entry) => (
+          <div className="rounded-[22px] bg-[color:var(--surface)] px-4 py-3" key={entry.id}>
+            <div className="flex flex-wrap gap-2">
+              {entry.expDelta > 0 ? <Badge>+{entry.expDelta} EXP</Badge> : null}
+              {entry.phDelta > 0 ? <Badge>+{entry.phDelta} PH</Badge> : null}
+              <Badge>{new Date(entry.createdAt).toLocaleDateString("pl-PL")}</Badge>
+            </div>
+            <p className="mt-3 text-base font-semibold text-[color:var(--foreground)]">
+              {entry.reason}
+            </p>
+            {entry.note ? (
+              <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-[color:var(--foreground-muted)]">
+                {entry.note}
+              </p>
+            ) : null}
+            {entry.grantedBy ? (
+              <p className="mt-2 text-xs uppercase tracking-[0.18em] text-[color:var(--foreground-subtle)]">
+                Przyznał: {entry.grantedBy.displayName || entry.grantedBy.username}
+              </p>
+            ) : null}
+          </div>
+        ))}
+      </CardContent>
+    </Card>
   );
 }
 

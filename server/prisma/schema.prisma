@@ -64,6 +64,7 @@ model User {
   createdSkillProposals SkillProposal[]    @relation("SkillProposalAuthor")
   reviewedSkillProposals SkillProposal[]   @relation("SkillProposalReviewer")
   grantedCharacterSkills CharacterSkill[]  @relation("CharacterSkillReviewer")
+  grantedProgressEntries ProgressEntry[]   @relation("ProgressEntryGrantor")
 }
 
 model World {
@@ -124,6 +125,8 @@ model Character {
   appearance  String?
   avatarUrl   String?
   statsJson   Json?
+  experiencePoints Int @default(0)
+  heroPoints  Int @default(0)
   isPublic    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -134,9 +137,42 @@ model Character {
   statValues  CharacterStatValue[]
   skillProposals SkillProposal[]
   skills      CharacterSkill[]
+  progressEntries ProgressEntry[]
 
   @@index([ownerId])
   @@index([worldId])
+}
+
+model ProgressRule {
+  id          String          @id @default(uuid())
+  code        String          @unique
+  label       String
+  description String?
+  expValue    Int             @default(0)
+  phValue     Int             @default(0)
+  isActive    Boolean         @default(true)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  entries     ProgressEntry[]
+}
+
+model ProgressEntry {
+  id          String        @id @default(uuid())
+  expDelta    Int           @default(0)
+  phDelta     Int           @default(0)
+  reason      String
+  note        String?
+  createdAt   DateTime      @default(now())
+  characterId String
+  grantedById String?
+  ruleId      String?
+  character   Character     @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  grantedBy   User?         @relation("ProgressEntryGrantor", fields: [grantedById], references: [id], onDelete: SetNull)
+  rule        ProgressRule? @relation(fields: [ruleId], references: [id], onDelete: SetNull)
+
+  @@index([characterId, createdAt])
+  @@index([grantedById])
+  @@index([ruleId])
 }
 
 model SkillProposal {

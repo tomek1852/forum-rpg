@@ -7,6 +7,7 @@ import {
 } from "@nestjs/common";
 import { Character, Prisma, SkillProposalStatus, StatValueType } from "@prisma/client";
 import { PrismaService } from "../prisma/prisma.service";
+import { AddProgressDto } from "./dto/add-progress.dto";
 import { CreateCharacterDto } from "./dto/create-character.dto";
 import { CharacterStatValueInputDto } from "./dto/character-stat-value-input.dto";
 import { UpdateCharacterDto } from "./dto/update-character.dto";
@@ -47,6 +48,17 @@ const characterInclude = {
     orderBy: [{ createdAt: "desc" }],
   },
 } satisfies Prisma.CharacterInclude;
+
+const progressEntryInclude = {
+  grantedBy: {
+    select: {
+      id: true,
+      username: true,
+      displayName: true,
+    },
+  },
+  rule: true,
+} satisfies Prisma.ProgressEntryInclude;
 
 @Injectable()
 export class CharactersService {
@@ -119,12 +131,13 @@ export class CharactersService {
       throw new NotFoundException("Nie znaleziono postaci.");
     }
 
-    if (!character.isPublic && character.ownerId !== requesterId) {
+    const canManageProgress = this.canManageProgress(requesterRole);
+
+    if (!character.isPublic && character.ownerId !== requesterId && !canManageProgress) {
       throw new ForbiddenException("Ta postac nie jest publiczna.");
     }
 
-    const canReviewSkills = requesterRole === "GM" || requesterRole === "ADMIN";
-    const includeProposals = character.ownerId === requesterId || canReviewSkills;
+    const includeProposals = character.ownerId === requesterId || canManageProgress;
 
     return {
       character: this.serializeCharacter(character, {
@@ -169,6 +182,115 @@ export class CharactersService {
         includeProposals: true,
       }),
     };
+  }
+
+  async grantProgress(
+    characterId: string,
+    grantor: { userId: string; role?: string },
+    dto: AddProgressDto,
+  ) {
+    if (!this.canManageProgress(grantor.role)) {
+      throw new ForbiddenException("Tylko MG lub administrator moze przyznawac progres.");
+    }
+
+    const rule = dto.ruleId
+      ? await this.prisma.progressRule.findUnique({
+          where: { id: dto.ruleId },
+        })
+      : null;
+
+    if (dto.ruleId && (!rule || !rule.isActive)) {
+      throw new BadRequestException("Wybrana regula progresu nie istnieje lub jest nieaktywna.");
+    }
+
+    const expDelta = dto.expDelta ?? rule?.expValue ?? 0;
+    const phDelta = dto.phDelta ?? rule?.phValue ?? 0;
+    const reason = dto.reason?.trim() || rule?.label?.trim();
+    const note = dto.note?.trim() || null;
+
+    if (expDelta <= 0 && phDelta <= 0) {
+      throw new BadRequestException("Przyznaj co najmniej 1 punkt EXP lub PH.");
+    }
+
+    if (!reason) {
+      throw new BadRequestException("Podaj powod przyznania progresu.");
+    }
+
+    const result = await this.prisma.$transaction(async (tx) => {
+      const character = await tx.character.findUnique({
+        where: { id: characterId },
+        select: { id: true },
+      });
+
+      if (!character) {
+        throw new NotFoundException("Nie znaleziono postaci.");
+      }
+
+      const entry = await tx.progressEntry.create({
+        data: {
+          characterId: character.id,
+          grantedById: grantor.userId,
+          ruleId: rule?.id ?? null,
+          expDelta,
+          phDelta,
+          reason,
+          note,
+        },
+        include: progressEntryInclude,
+      });
+
+      const updatedCharacter = await tx.character.update({
+        where: { id: character.id },
+        data: {
+          experiencePoints: { increment: expDelta },
+          heroPoints: { increment: phDelta },
+        },
+        include: characterInclude,
+      });
+
+      return { entry, character: updatedCharacter };
+    });
+
+    return {
+      message: "Progres zostal przyznany.",
+      entry: result.entry,
+      character: this.serializeCharacter(result.character, {
+        includeProposals: true,
+      }),
+    };
+  }
+
+  async listProgressHistory(
+    characterId: string,
+    requester: { userId: string; role?: string },
+  ) {
+    const character = await this.prisma.character.findUnique({
+      where: { id: characterId },
+      select: {
+        id: true,
+        ownerId: true,
+      },
+    });
+
+    if (!character) {
+      throw new NotFoundException("Nie znaleziono postaci.");
+    }
+
+    if (character.ownerId !== requester.userId && !this.canManageProgress(requester.role)) {
+      throw new ForbiddenException("Historia progresu jest dostepna tylko dla wlasciciela, MG i admina.");
+    }
+
+    const entries = await this.prisma.progressEntry.findMany({
+      where: { characterId },
+      include: progressEntryInclude,
+      orderBy: { createdAt: "desc" },
+    });
+
+    return { entries };
+  }
+
+  private canManageProgress(role?: string) {
+    return role === "GM" || role === "ADMIN";
   }
 
   private async assertOwnership(characterId: string, ownerId: string) {

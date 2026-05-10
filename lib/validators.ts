@@ -122,6 +122,14 @@ const optionalIntegerField = z
   .optional()
   .or(z.literal(""));
 
+const optionalNonNegativeIntegerField = z
+  .string()
+  .refine((value) => value.trim() === "" || /^\d+$/.test(value.trim()), {
+    message: "Wpisz liczbę całkowitą dodatnią albo zostaw pole puste.",
+  })
+  .optional()
+  .or(z.literal(""));
+
 export const statDefinitionSchema = z.object({
   worldId: z.uuid("Wybierz świat."),
   key: z
@@ -182,6 +190,28 @@ export const skillProposalSchema = z.object({
     .optional()
     .or(z.literal("")),
 });
+
+export const progressGrantSchema = z
+  .object({
+    expDelta: optionalNonNegativeIntegerField,
+    phDelta: optionalNonNegativeIntegerField,
+    reason: z
+      .string()
+      .min(3, "Podaj powód przyznania progresu.")
+      .max(160, "Powód może mieć maksymalnie 160 znaków."),
+    note: z
+      .string()
+      .max(500, "Notatka może mieć maksymalnie 500 znaków.")
+      .optional()
+      .or(z.literal("")),
+  })
+  .refine(
+    (value) => Number(value.expDelta || 0) > 0 || Number(value.phDelta || 0) > 0,
+    {
+      message: "Przyznaj co najmniej 1 punkt EXP lub PH.",
+      path: ["expDelta"],
+    },
+  );
 
 export const forumThreadSchema = z.object({
   categoryId: z.uuid("Wybierz poprawną kategorię forum."),

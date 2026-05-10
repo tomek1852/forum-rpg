@@ -4,6 +4,7 @@ import axios from "axios";
 import { useAuthStore } from "./auth-store";
 import type {
   AccountStatus,
+  AddProgressPayload,
   AuthResponse,
   CharacterPayload,
   CharacterResponse,
@@ -22,6 +23,8 @@ import type {
   ModerationAccountMutationResponse,
   ModerationAccountsResponse,
   NotificationsResponse,
+  ProgressHistoryResponse,
+  ProgressMutationResponse,
   RegisterPayload,
   RegisterResponse,
   RequestEmailVerificationPayload,
@@ -223,6 +226,24 @@ export async function createCharacter(payload: CharacterPayload) {
 export async function updateCharacter(characterId: string, payload: CharacterPayload) {
   const { data } = await api.patch<CharacterResponse>(
     `/characters/${characterId}`,
+    payload,
+  );
+  return data;
+}
+
+export async function getCharacterProgress(characterId: string) {
+  const { data } = await api.get<ProgressHistoryResponse>(
+    `/characters/${characterId}/progress`,
+  );
+  return data;
+}
+
+export async function addCharacterProgress(
+  characterId: string,
+  payload: AddProgressPayload,
+) {
+  const { data } = await api.post<ProgressMutationResponse>(
+    `/characters/${characterId}/progress`,
     payload,
   );
   return data;

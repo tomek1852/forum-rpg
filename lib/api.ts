@@ -23,7 +23,12 @@ import type {
   LoginPayload,
   ModerationAccountMutationResponse,
   ModerationAccountsResponse,
+  MessageRecipientSearchResponse,
   NotificationsResponse,
+  PrivateConversationMessagesResponse,
+  PrivateConversationsResponse,
+  PrivateMessagePayload,
+  PrivateMessageResponse,
   ProgressHistoryResponse,
   ProgressMutationResponse,
   RegisterPayload,
@@ -36,6 +41,7 @@ import type {
   SkillProposalResponse,
   SkillProposalsResponse,
   StatDefinitionMutationResponse,
+  CreateConversationPayload,
   UpdateAccountStatusPayload,
   UpdateProfilePayload,
   UpdateUserRolePayload,
@@ -194,6 +200,15 @@ export async function getUserProfile(userId: string) {
   return data;
 }
 
+export async function searchUsersForMessages(query: string) {
+  const { data } = await api.get<MessageRecipientSearchResponse>("/users/search", {
+    params: {
+      query,
+    },
+  });
+  return data;
+}
+
 export async function updateMyProfile(payload: UpdateProfilePayload) {
   const { data } = await api.patch<UserProfileResponse>("/users/me", payload);
   return data;
@@ -342,6 +357,44 @@ export async function markAllNotificationsAsRead() {
     message: string;
     unreadCount: number;
   }>("/notifications/read-all");
+  return data;
+}
+
+export async function createConversation(payload: CreateConversationPayload) {
+  const { data } = await api.post<{
+    conversation: PrivateConversationsResponse["conversations"][number];
+  }>("/messages/conversations", payload);
+  return data;
+}
+
+export async function getMyConversations() {
+  const { data } = await api.get<PrivateConversationsResponse>("/messages/conversations");
+  return data;
+}
+
+export async function getConversationMessages(conversationId: string) {
+  const { data } = await api.get<PrivateConversationMessagesResponse>(
+    `/messages/conversations/${conversationId}/messages`,
+  );
+  return data;
+}
+
+export async function sendPrivateMessage(
+  conversationId: string,
+  payload: PrivateMessagePayload,
+) {
+  const { data } = await api.post<PrivateMessageResponse>(
+    `/messages/conversations/${conversationId}/messages`,
+    payload,
+  );
+  return data;
+}
+
+export async function markConversationAsRead(conversationId: string) {
+  const { data } = await api.patch<{
+    message: string;
+    updatedCount: number;
+  }>(`/messages/conversations/${conversationId}/read`);
   return data;
 }
 

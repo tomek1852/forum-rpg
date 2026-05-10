@@ -25,6 +25,14 @@ export type PublicUser = Pick<
   | "updatedAt"
 >;
 
+const messageRecipientSelect = {
+  id: true,
+  username: true,
+  displayName: true,
+  avatarUrl: true,
+  role: true,
+} satisfies Prisma.UserSelect;
+
 @Injectable()
 export class UsersService {
   constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
@@ -89,6 +97,50 @@ export class UsersService {
 
     return {
       user: this.toPublicUser(user),
+    };
+  }
+
+  async searchUsersForMessages(userId: string, query: string) {
+    const normalizedQuery = query.trim();
+
+    if (normalizedQuery.length < 2) {
+      return {
+        users: [],
+      };
+    }
+
+    const users = await this.prisma.user.findMany({
+      where: {
+        id: {
+          not: userId,
+        },
+        isActive: true,
+        status: AccountStatus.ACTIVE,
+        emailVerified: true,
+        OR: [
+          {
+            username: {
+              contains: normalizedQuery,
+              mode: "insensitive",
+            },
+          },
+          {
+            displayName: {
+              contains: normalizedQuery,
+              mode: "insensitive",
+            },
+          },
+        ],
+      },
+      orderBy: {
+        username: "asc",
+      },
+      take: 8,
+      select: messageRecipientSelect,
+    });
+
+    return {
+      users,
     };
   }
 

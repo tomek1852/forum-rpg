@@ -87,3 +87,29 @@
 - Cache rankingu odswieza sie po przyznaniu progresu, a backendowe testy obejmuja kolejnosc endpointu i aktualizacje rankingu po zmianie licznikow.
 - Dodano testy backendowe dla zwiekszania EXP/PH, historii progresu oraz blokady dostepu dla zwyklych graczy.
 - Zweryfikowano iteracje poleceniami: `npm --prefix server run test`, `npm --prefix server run build`, `npm run lint`, `npm run test:web`, `npm run build:web`.
+
+## 2026-05-10 - ETAP 3 - podstawowe wiadomosci prywatne - IN PROGRESS
+
+- Dodano modele `Conversation` i `PrivateMessage` wraz z migracja `202605101700_private_messages` oraz relacjami do `User`.
+- Zaimplementowano backendowy modul `messages` z endpointami do tworzenia konwersacji, listy moich rozmow, pobierania historii, wysylania wiadomosci i oznaczania wpisow jako przeczytane.
+- Logika backendu pilnuje unikalnosci rozmowy 1:1, aktualizuje `lastMessageAt`, zapisuje wiadomosci w transakcji i liczy nieprzeczytane wpisy na potrzeby listy konwersacji.
+- Dodano frontendowy widok `/messages` z lista konwersacji, widokiem rozmowy, formularzem nowej konwersacji i formularzem wysylki wiadomosci.
+- Dashboard dostal skrot do wiadomosci, a na profilu innego gracza pojawil sie przycisk do szybkiego rozpoczecia rozmowy.
+- Dodano testy backendowe potwierdzajace wysylke wiadomosci, widocznosc rozmow uzytkownika, ponowne wykorzystanie istniejacej konwersacji i oznaczanie wiadomosci jako przeczytane.
+- Zweryfikowano iteracje poleceniami: `npm --prefix server run prisma:generate`, `npm --prefix server run test`, `npm --prefix server run build`, `npm run lint`, `npm run test:web`, `npm run build:web`.
+
+## 2026-05-10 - ETAP 3 - realtime wiadomosci prywatne - IN PROGRESS
+
+- Rozszerzono system wiadomosci o realtime przez `Socket.io` po stronie backendu i frontendu.
+- Dodano backendowy gateway `messages-realtime` z autoryzacja JWT w handshake oraz pokojami uzytkownika i konwersacji.
+- Tworzenie konwersacji, wysylanie wiadomosci i oznaczanie jako przeczytane emituja teraz zdarzenia realtime do obu uczestnikow rozmowy.
+- Frontend `/messages` utrzymuje polaczenie socketowe, dolacza do aktywnej rozmowy i odswieza liste konwersacji oraz widok czatu bez recznego odswiezania.
+- Doinstalowano paczki `@nestjs/websockets`, `@nestjs/platform-socket.io`, `socket.io` oraz `socket.io-client`.
+- Zweryfikowano iteracje poleceniami: `npm --prefix server run test`, `npm --prefix server run build`, `npm run lint`, `npm run test:web`, `npm run build:web`.
+
+## 2026-05-10 - ETAP 3 - wyszukiwanie odbiorcy wiadomosci - IN PROGRESS
+
+- Rozszerzono backend `users` o endpoint wyszukiwania odbiorcow do wiadomosci prywatnych, filtrujacy aktywne i zweryfikowane konta po `username` oraz `displayName`.
+- Frontend `/messages` przestal wymagac recznego wpisywania `UUID` odbiorcy; formularz nowej rozmowy pozwala teraz wyszukac gracza po nazwie i wybrac go z listy wynikow.
+- Skrzynka wiadomosci zachowuje dotychczasowy flow rozpoczecia rozmowy z profilu gracza, ale pozwala tez zalozyc nowa konwersacje bez znajomosci technicznego identyfikatora uzytkownika.
+- Zweryfikowano iteracje poleceniami: `npx.cmd eslint components/messages/messages-shell.tsx lib/api.ts lib/types.ts --max-warnings=0`, `npm.cmd --prefix server run build`, `npm.cmd run build:web`.

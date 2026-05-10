@@ -1,4 +1,13 @@
-import { Body, Controller, Get, Inject, Param, Patch, UseGuards } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  Get,
+  Inject,
+  Param,
+  Patch,
+  Query,
+  UseGuards,
+} from "@nestjs/common";
 import { CurrentUser } from "../common/decorators/current-user.decorator";
 import type { AuthenticatedUser } from "../common/decorators/current-user.decorator";
 import { Roles } from "../common/decorators/roles.decorator";
@@ -25,6 +34,14 @@ export class UsersController {
     @Body() dto: UpdateProfileDto,
   ) {
     return this.usersService.updateProfile(user.userId, dto);
+  }
+
+  @Get("search")
+  searchUsers(
+    @CurrentUser() user: { userId: string },
+    @Query("query") query?: string,
+  ) {
+    return this.usersService.searchUsersForMessages(user.userId, query ?? "");
   }
 
   @Get("moderation/accounts")

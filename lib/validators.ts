@@ -5,6 +5,22 @@ export const loginSchema = z.object({
   password: z.string().min(8, "Hasło musi mieć co najmniej 8 znaków."),
 });
 
+export const privateConversationSchema = z.object({
+  participantId: z.uuid("Wybierz poprawnego odbiorcÄ™."),
+  content: z
+    .string()
+    .max(5000, "Pierwsza wiadomoĹ›Ä‡ jest za dĹ‚uga.")
+    .optional()
+    .or(z.literal("")),
+});
+
+export const privateMessageSchema = z.object({
+  content: z
+    .string()
+    .min(1, "Wpisz treĹ›Ä‡ wiadomoĹ›ci.")
+    .max(5000, "WiadomoĹ›Ä‡ jest za dĹ‚uga."),
+});
+
 export const registerSchema = z
   .object({
     email: z.email("Wpisz poprawny adres email."),

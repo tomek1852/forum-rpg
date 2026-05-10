@@ -61,6 +61,9 @@ model User {
   forumThreads        ForumThread[]        @relation("ForumThreadAuthor")
   forumPosts          ForumPost[]          @relation("ForumPostAuthor")
   notifications       Notification[]
+  conversationsStarted Conversation[]      @relation("ConversationUserOne")
+  conversationsReceived Conversation[]     @relation("ConversationUserTwo")
+  privateMessagesSent PrivateMessage[]     @relation("PrivateMessageSender")
   createdSkillProposals SkillProposal[]    @relation("SkillProposalAuthor")
   reviewedSkillProposals SkillProposal[]   @relation("SkillProposalReviewer")
   grantedCharacterSkills CharacterSkill[]  @relation("CharacterSkillReviewer")
@@ -321,4 +324,35 @@ model Notification {
   user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, isRead, createdAt])
+}
+
+model Conversation {
+  id            String           @id @default(uuid())
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  lastMessageAt DateTime         @default(now())
+  userOneId     String
+  userTwoId     String
+  userOne       User             @relation("ConversationUserOne", fields: [userOneId], references: [id], onDelete: Cascade)
+  userTwo       User             @relation("ConversationUserTwo", fields: [userTwoId], references: [id], onDelete: Cascade)
+  messages      PrivateMessage[]
+
+  @@unique([userOneId, userTwoId])
+  @@index([userOneId, lastMessageAt])
+  @@index([userTwoId, lastMessageAt])
+}
+
+model PrivateMessage {
+  id             String       @id @default(uuid())
+  content        String
+  createdAt      DateTime     @default(now())
+  readAt         DateTime?
+  conversationId String
+  senderId       String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender         User         @relation("PrivateMessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId, createdAt])
+  @@index([conversationId, readAt])
+  @@index([senderId, createdAt])
 }

@@ -7,8 +7,19 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CharacterCard } from "@/components/characters/character-card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { getApiErrorMessage, getCurrentUser, getMyCharacters, logoutUser } from "@/lib/api";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  getApiErrorMessage,
+  getCurrentUser,
+  getMyCharacters,
+  logoutUser,
+} from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
 
 export function DashboardShell() {
@@ -54,7 +65,7 @@ export function DashboardShell() {
   const logoutMutation = useMutation({
     mutationFn: async () => {
       if (!refreshToken) {
-        return { message: "Sesja lokalna została zamknięta." };
+        return { message: "Sesja lokalna zostala zamknieta." };
       }
 
       return logoutUser(refreshToken);
@@ -102,7 +113,7 @@ export function DashboardShell() {
                   Witaj, {profile?.username ?? "Graczu"}
                 </h1>
                 <p className="mt-3 max-w-2xl text-lg leading-8 text-[color:var(--foreground-muted)]">
-                  Tu zarządzisz swoim kontem, przejdziesz do profilu i przygotujesz
+                  Tu zarzadzisz swoim kontem, przejdziesz do profilu i przygotujesz
                   postacie do dalszej rozgrywki.
                 </p>
               </div>
@@ -115,6 +126,9 @@ export function DashboardShell() {
                 <Link href="/notifications">Powiadomienia</Link>
               </Button>
               <Button asChild size="lg" variant="secondary">
+                <Link href="/messages">Wiadomosci</Link>
+              </Button>
+              <Button asChild size="lg" variant="secondary">
                 <Link href="/rankings">Ranking</Link>
               </Button>
               {canModerate ? (
@@ -124,12 +138,12 @@ export function DashboardShell() {
               ) : null}
               {canModerate ? (
                 <Button asChild size="lg" variant="secondary">
-                  <Link href="/mg">Światy</Link>
+                  <Link href="/mg">Swiaty</Link>
                 </Button>
               ) : null}
               {profile ? (
                 <Button asChild size="lg">
-                  <Link href={`/profile/${profile.id}`}>Mój profil</Link>
+                  <Link href={`/profile/${profile.id}`}>Moj profil</Link>
                 </Button>
               ) : null}
               <Button
@@ -138,7 +152,7 @@ export function DashboardShell() {
                 onClick={() => logoutMutation.mutate()}
                 disabled={logoutMutation.isPending}
               >
-                {logoutMutation.isPending ? "Wylogowywanie..." : "Wyloguj się"}
+                {logoutMutation.isPending ? "Wylogowywanie..." : "Wyloguj sie"}
               </Button>
             </div>
           </div>
@@ -147,7 +161,7 @@ export function DashboardShell() {
           <Card>
             <CardHeader>
               <CardTitle>Profil gracza</CardTitle>
-              <CardDescription>Najważniejsze dane zwracane przez backend.</CardDescription>
+              <CardDescription>Najwazniejsze dane zwracane przez backend.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4 text-sm text-[color:var(--foreground-muted)]">
               <ProfileRow label="E-mail" value={profile?.email ?? "-"} />
@@ -176,7 +190,7 @@ export function DashboardShell() {
                   </CardDescription>
                 </div>
                 <Button asChild variant="secondary">
-                  <Link href="/character/new">Dodaj postać</Link>
+                  <Link href="/character/new">Dodaj postac</Link>
                 </Button>
               </div>
             </CardHeader>
@@ -189,7 +203,7 @@ export function DashboardShell() {
                 </div>
               ) : (
                 <p className="text-sm leading-6 text-[color:var(--foreground-muted)]">
-                  Nie masz jeszcze żadnej postaci. Utwórz pierwszą kartę i uzupełnij jej
+                  Nie masz jeszcze zadnej postaci. Utworz pierwsza karte i uzupelnij jej
                   opis oraz statystyki.
                 </p>
               )}

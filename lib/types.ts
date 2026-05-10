@@ -353,6 +353,50 @@ export interface NotificationsResponse {
   unreadCount: number;
 }
 
+export interface MessageParticipant {
+  id: string;
+  username: string;
+  displayName: string | null;
+  avatarUrl: string | null;
+  role: Role;
+}
+
+export interface MessageRecipientSearchResponse {
+  users: MessageParticipant[];
+}
+
+export interface PrivateMessage {
+  id: string;
+  content: string;
+  createdAt: string;
+  readAt: string | null;
+  senderId: string;
+  sender: MessageParticipant;
+}
+
+export interface PrivateConversationSummary {
+  id: string;
+  createdAt: string;
+  updatedAt: string;
+  lastMessageAt: string;
+  unreadCount: number;
+  otherParticipant: MessageParticipant;
+  lastMessage: PrivateMessage | null;
+}
+
+export interface PrivateConversationsResponse {
+  conversations: PrivateConversationSummary[];
+}
+
+export interface PrivateConversationMessagesResponse {
+  conversation: PrivateConversationSummary;
+  messages: PrivateMessage[];
+}
+
+export interface PrivateMessageResponse {
+  message: PrivateMessage;
+}
+
 export interface ModerationAccountsResponse {
   users: User[];
 }
@@ -463,6 +507,14 @@ export interface ForumThreadPayload {
 export interface ForumReplyPayload {
   content: string;
   quotePostId?: string;
+}
+
+export interface CreateConversationPayload {
+  participantId: string;
+}
+
+export interface PrivateMessagePayload {
+  content: string;
 }
 
 export interface UpdateAccountStatusPayload {

@@ -42,7 +42,7 @@
 - Powiadomienia zostaly podlaczone do forum: nowy watek moze powiadomic `GM/Admin`, a odpowiedzi i cytaty tworza powiadomienia dla wlasciciela watku lub autora cytowanego posta.
 - Dodano frontendowy widok `notifications`, klienta API oraz wejscie do powiadomien z dashboardu.
 - Zweryfikowano iteracje poleceniami: `npm --prefix server run prisma:generate`, `npm --prefix server run test`, `npm --prefix server run build`, `npm run lint`, `npm run test:web`, `npm run build:web`.
-- Uwaga operacyjna: migracja `202604181000_notifications` nie zostala jeszcze zastosowana, poniewaz lokalna baza pod `localhost:5433` nie byla uruchomiona w momencie weryfikacji. Po starcie Dockera/PostgreSQL trzeba wykonac `npm --prefix server run prisma:migrate:dev`.
+- Uwaga operacyjna: migracja `202604181000_notifications` przechodzi poprawnie po uruchomieniu lokalnego PostgreSQL pod `localhost:5433`; lokalny flow `npm --prefix server run prisma:migrate:dev` zostal ponownie zweryfikowany na tej konfiguracji.
 
 ## 2026-04-18 - ETAP 1 - mailer auth i powiadomienia email - IN PROGRESS
 
@@ -74,4 +74,4 @@
 - Panel `mg` zostal rozszerzony o kolejke propozycji umiejetnosci z akcjami zatwierdzenia i odrzucenia oraz komentarzem dla gracza.
 - Powiadomienia in-app i e-mail obejmuja teraz rowniez nowe propozycje umiejetnosci oraz decyzje o ich zatwierdzeniu lub odrzuceniu.
 - Zweryfikowano iteracje poleceniami: `npm --prefix server run prisma:generate`, `npm --prefix server run build`, `npm --prefix server run test`, `npm run lint`, `npm run test:web`, `npm run build:web`.
-- Uwaga operacyjna: lokalne `npm --prefix server run prisma:migrate:dev` oraz `prisma migrate status` zatrzymuja sie aktualnie na ogolnym `Schema engine error` dla bazy pod `localhost:5433`, wiec migracje `202605041930_worlds_stats` i `202605042100_skill_workflow` sa przygotowane w repo, ale nie zostaly jeszcze zastosowane na tej instancji PostgreSQL.
+- Zweryfikowano rowniez lokalny flow Prisma na PostgreSQL pod `localhost:5433`: migracje `202605041930_worlds_stats` i `202605042100_skill_workflow` aplikuja sie poprawnie na czystej bazie, `prisma migrate status` jest zielone, a `npm --prefix server run prisma:migrate:dev` przechodzi bez bledu.

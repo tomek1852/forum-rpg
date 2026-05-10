@@ -248,3 +248,54 @@ export const forumReplySchema = z.object({
     .max(10000, "Odpowiedź jest za długa."),
   quotePostId: z.uuid("Wybrany cytat jest niepoprawny.").optional(),
 });
+
+export const eventSchema = z
+  .object({
+    title: z
+      .string()
+      .min(2, "Tytul eventu musi miec co najmniej 2 znaki.")
+      .max(120, "Tytul eventu moze miec maksymalnie 120 znakow."),
+    summary: z
+      .string()
+      .max(240, "Skrot opisu eventu moze miec maksymalnie 240 znakow.")
+      .optional()
+      .or(z.literal("")),
+    description: z
+      .string()
+      .max(4000, "Opis eventu jest za dlugi.")
+      .optional()
+      .or(z.literal("")),
+    location: z
+      .string()
+      .max(160, "Miejsce eventu moze miec maksymalnie 160 znakow.")
+      .optional()
+      .or(z.literal("")),
+    startsAt: z.string().min(1, "Wybierz termin rozpoczecia eventu."),
+    endsAt: z.string().optional().or(z.literal("")),
+    maxParticipants: z
+      .string()
+      .refine((value) => value.trim() === "" || /^\d+$/.test(value.trim()), {
+        message: "Podaj dodatnia liczbe calkowita albo zostaw pole puste.",
+      })
+      .optional()
+      .or(z.literal("")),
+  })
+  .refine(
+    (value) =>
+      !value.endsAt ||
+      !value.startsAt ||
+      new Date(value.endsAt).getTime() > new Date(value.startsAt).getTime(),
+    {
+      message: "Data zakonczenia musi byc pozniejsza niz start eventu.",
+      path: ["endsAt"],
+    },
+  );
+
+export const eventParticipationSchema = z.object({
+  characterId: z.uuid("Wybierz postac, ktora ma zapisac sie do eventu."),
+  note: z
+    .string()
+    .max(500, "Notatka do zapisu moze miec maksymalnie 500 znakow.")
+    .optional()
+    .or(z.literal("")),
+});

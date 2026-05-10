@@ -39,6 +39,12 @@ enum SkillProposalStatus {
   REJECTED
 }
 
+enum EventParticipationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 model User {
   id                  String               @id @default(uuid())
   email               String               @unique
@@ -68,6 +74,8 @@ model User {
   reviewedSkillProposals SkillProposal[]   @relation("SkillProposalReviewer")
   grantedCharacterSkills CharacterSkill[]  @relation("CharacterSkillReviewer")
   grantedProgressEntries ProgressEntry[]   @relation("ProgressEntryGrantor")
+  createdEvents       Event[]              @relation("EventCreator")
+  reviewedEventParticipations EventParticipation[] @relation("EventParticipationReviewer")
 }
 
 model World {
@@ -141,6 +149,7 @@ model Character {
   skillProposals SkillProposal[]
   skills      CharacterSkill[]
   progressEntries ProgressEntry[]
+  eventParticipations EventParticipation[]
 
   @@index([ownerId])
   @@index([worldId])
@@ -221,6 +230,46 @@ model CharacterSkill {
 
   @@index([characterId, grantedAt])
   @@index([approvedById])
+}
+
+model Event {
+  id              String               @id @default(uuid())
+  title           String
+  summary         String?
+  description     String?
+  location        String?
+  startsAt        DateTime
+  endsAt          DateTime?
+  maxParticipants Int?
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+  creatorId       String
+  creator         User                 @relation("EventCreator", fields: [creatorId], references: [id], onDelete: Cascade)
+  participations  EventParticipation[]
+
+  @@index([startsAt])
+  @@index([creatorId, createdAt])
+}
+
+model EventParticipation {
+  id              String                   @id @default(uuid())
+  status          EventParticipationStatus @default(PENDING)
+  note            String?
+  reviewerComment String?
+  decidedAt       DateTime?
+  createdAt       DateTime                 @default(now())
+  updatedAt       DateTime                 @updatedAt
+  eventId         String
+  characterId     String
+  reviewerId      String?
+  event           Event                    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  character       Character                @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  reviewer        User?                    @relation("EventParticipationReviewer", fields: [reviewerId], references: [id], onDelete: SetNull)
+
+  @@unique([eventId, characterId])
+  @@index([eventId, status, createdAt])
+  @@index([characterId, status, createdAt])
+  @@index([reviewerId])
 }
 
 model StatDefinition {

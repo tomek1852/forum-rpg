@@ -122,3 +122,13 @@
 - Dashboard pokazuje teraz realtime badge nieprzeczytanych powiadomien, a logika aktualizacji `/messages` zostala wydzielona do testowalnych helperow cache bez zmian w REST API.
 - Dodano testy dla helperow realtime po stronie frontendu i rozszerzono test `NotificationsService` o emisje `notification.created`; smoke test Playwright zostal tez ustabilizowany pod aktualne etykiety CTA.
 - Zweryfikowano iteracje poleceniami: `npm.cmd run lint`, `npm.cmd run test`, `npm.cmd run build`, `npm.cmd run test:e2e`.
+
+## 2026-05-10 - ETAP 3 - events MVP - IN PROGRESS
+
+- Dodano modele `Event` i `EventParticipation` oraz migracje Prisma z prostym statusem uczestnictwa `PENDING / APPROVED / REJECTED`.
+- Zaimplementowano backendowy modul `events` w NestJS: lista eventow, widok szczegolow, tworzenie i edycja eventu przez `GM/Admin`, zapis postaci do eventu oraz akceptacja lub odrzucenie uczestnictwa.
+- Logika backendu pilnuje wlasciciela postaci przy zapisie, unikalnosci zgloszenia per `event + character`, poprawnej kolejnosci dat oraz limitu zaakceptowanych miejsc.
+- Dodano frontendowe widoki `/events` i `/events/[eventId]` z lista wydarzen, formularzem tworzenia dla `GM/Admin`, formularzem zapisu postaci oraz panelem review uczestnikow dla moderatorow.
+- Dashboard i panel `mg` dostaly skroty do eventow, a karta eventu pokazuje zaakceptowanych uczestnikow, oczekujace zgloszenia i podstawowe metadane terminu.
+- Dodano testy backendowe potwierdzajace utworzenie eventu, zapis postaci do eventu i akceptacje uczestnictwa przez `GM/Admin`.
+- Zweryfikowano iteracje poleceniami: `npx.cmd prisma generate --no-engine` w `server`, `npm.cmd run lint`, `npm.cmd run test`, `npm.cmd run build`, `npm.cmd run test:e2e`.

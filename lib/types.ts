@@ -2,6 +2,7 @@ export type Role = "PLAYER" | "GM" | "ADMIN";
 export type AccountStatus = "PENDING_APPROVAL" | "ACTIVE" | "BLOCKED";
 export type StatValueType = "NUMBER" | "TEXT";
 export type SkillProposalStatus = "PENDING" | "APPROVED" | "REJECTED";
+export type EventParticipationStatus = "PENDING" | "APPROVED" | "REJECTED";
 
 export interface User {
   id: string;
@@ -184,6 +185,59 @@ export interface Character {
   updatedAt: string;
 }
 
+export interface EventParticipation {
+  id: string;
+  status: EventParticipationStatus;
+  note: string | null;
+  reviewerComment: string | null;
+  decidedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  eventId: string;
+  characterId: string;
+  reviewerId: string | null;
+  event: {
+    id: string;
+    title: string;
+    maxParticipants: number | null;
+  };
+  character: {
+    id: string;
+    name: string;
+    title: string | null;
+    ownerId: string;
+    world: Pick<World, "id" | "name" | "slug"> | null;
+  };
+  reviewer: {
+    id: string;
+    username: string;
+    displayName: string | null;
+  } | null;
+}
+
+export interface Event {
+  id: string;
+  title: string;
+  summary: string | null;
+  description: string | null;
+  location: string | null;
+  startsAt: string;
+  endsAt: string | null;
+  maxParticipants: number | null;
+  creatorId: string;
+  createdAt: string;
+  updatedAt: string;
+  creator: {
+    id: string;
+    username: string;
+    displayName: string | null;
+  };
+  participations: EventParticipation[];
+  approvedParticipantCount: number;
+  pendingParticipantCount: number;
+  remainingSlots: number | null;
+}
+
 export interface CharacterResponse {
   character: Character;
 }
@@ -226,6 +280,24 @@ export interface WorldResponse {
 export interface WorldMutationResponse {
   message: string;
   world: World;
+}
+
+export interface EventsResponse {
+  events: Event[];
+}
+
+export interface EventResponse {
+  event: Event;
+}
+
+export interface EventMutationResponse {
+  message: string;
+  event: Event;
+}
+
+export interface EventParticipationResponse {
+  message: string;
+  participation: EventParticipation;
 }
 
 export interface StatDefinitionMutationResponse {
@@ -461,6 +533,36 @@ export interface CreateWorldPayload {
   slug?: string;
   summary?: string;
   description?: string;
+}
+
+export interface CreateEventPayload {
+  title: string;
+  summary?: string;
+  description?: string;
+  location?: string;
+  startsAt: string;
+  endsAt?: string;
+  maxParticipants?: number;
+}
+
+export interface UpdateEventPayload {
+  title?: string;
+  summary?: string;
+  description?: string;
+  location?: string;
+  startsAt?: string;
+  endsAt?: string;
+  maxParticipants?: number;
+}
+
+export interface CreateEventParticipationPayload {
+  characterId: string;
+  note?: string;
+}
+
+export interface ReviewEventParticipationPayload {
+  status: EventParticipationStatus;
+  reviewerComment?: string;
 }
 
 export interface CreateStatDefinitionPayload {

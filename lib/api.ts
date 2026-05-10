@@ -13,7 +13,13 @@ import type {
   CreateSkillProposalPayload,
   CreateStatDefinitionPayload,
   CreateWorldPayload,
+  CreateEventPayload,
+  CreateEventParticipationPayload,
   CurrentUserResponse,
+  EventMutationResponse,
+  EventParticipationResponse,
+  EventResponse,
+  EventsResponse,
   ForumCategoriesResponse,
   ForumCategoryResponse,
   ForumPostResponse,
@@ -35,6 +41,7 @@ import type {
   RegisterResponse,
   RequestEmailVerificationPayload,
   RequestPasswordResetPayload,
+  ReviewEventParticipationPayload,
   ReviewSkillProposalPayload,
   ResetPasswordPayload,
   Role,
@@ -43,6 +50,7 @@ import type {
   StatDefinitionMutationResponse,
   CreateConversationPayload,
   UpdateAccountStatusPayload,
+  UpdateEventPayload,
   UpdateProfilePayload,
   UpdateUserRolePayload,
   UserProfileResponse,
@@ -240,8 +248,50 @@ export async function getWorlds() {
   return data;
 }
 
+export async function getEvents() {
+  const { data } = await api.get<EventsResponse>("/events");
+  return data;
+}
+
+export async function getEvent(eventId: string) {
+  const { data } = await api.get<EventResponse>(`/events/${eventId}`);
+  return data;
+}
+
 export async function createCharacter(payload: CharacterPayload) {
   const { data } = await api.post<CharacterResponse>("/characters", payload);
+  return data;
+}
+
+export async function createEvent(payload: CreateEventPayload) {
+  const { data } = await api.post<EventMutationResponse>("/events", payload);
+  return data;
+}
+
+export async function updateEvent(eventId: string, payload: UpdateEventPayload) {
+  const { data } = await api.patch<EventMutationResponse>(`/events/${eventId}`, payload);
+  return data;
+}
+
+export async function createEventParticipation(
+  eventId: string,
+  payload: CreateEventParticipationPayload,
+) {
+  const { data } = await api.post<EventParticipationResponse>(
+    `/events/${eventId}/participations`,
+    payload,
+  );
+  return data;
+}
+
+export async function reviewEventParticipation(
+  participationId: string,
+  payload: ReviewEventParticipationPayload,
+) {
+  const { data } = await api.patch<EventParticipationResponse>(
+    `/events/participations/${participationId}/review`,
+    payload,
+  );
   return data;
 }
 

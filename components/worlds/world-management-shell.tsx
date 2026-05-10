@@ -228,6 +228,9 @@ export function WorldManagementShell() {
             </div>
             <div className="flex flex-wrap gap-3">
               <Button asChild size="lg" variant="secondary">
+                <Link href="/events">Eventy</Link>
+              </Button>
+              <Button asChild size="lg" variant="secondary">
                 <Link href="/dashboard">Dashboard</Link>
               </Button>
               <Button asChild size="lg" variant="secondary">

@@ -61,3 +61,17 @@
 - Dashboard dostal bezposredni skrot do moderacji dla uzytkownikow z rola `GM` lub `ADMIN`.
 - Poprawiono widoki auth tak, aby opisy odpowiadaly nowemu przeplywowi zatwierdzania kont.
 - Zweryfikowano iteracje poleceniami: `npm --prefix server run test`, `npm --prefix server run build`, `npm run lint`, `npm run test:web`, `npm run build:web`.
+
+## 2026-05-04 - ETAP 2 - swiaty i dynamiczne statystyki - IN PROGRESS
+
+- Dodano fundament domenowy pod `ETAP 2`: modele `World`, `StatDefinition`, `CharacterStatValue` oraz relacje swiata i statystyk do postaci.
+- Rozszerzono backend o modul `worlds` z endpointami do listy swiatow, tworzenia swiata i dodawania definicji statystyk przez `GM` lub `ADMIN`.
+- Przebudowano backend postaci tak, aby tworzenie i edycja zapisywaly `worldId`, dynamiczne wartosci statystyk oraz znormalizowany `statsJson` dla zgodnosci z dotychczasowym UI.
+- Dodano frontendowy panel `mg` do zarzadzania swiatami i statystykami oraz skrot do niego z dashboardu dla moderatorow.
+- Formularz i widok postaci przestawiono z recznego JSON-a na dynamiczne pola zalezne od wybranego swiata, a karty postaci pokazuja teraz rowniez przypisany swiat.
+- Dodano workflow umiejetnosci: modele `SkillProposal` i `CharacterSkill`, endpointy do zglaszania propozycji przez gracza oraz review przez `GM` lub `ADMIN`.
+- Karta postaci pokazuje teraz zatwierdzone umiejetnosci, pozwala wlascicielowi wyslac nowa propozycje i wyswietla historie review dla widocznych zgloszen.
+- Panel `mg` zostal rozszerzony o kolejke propozycji umiejetnosci z akcjami zatwierdzenia i odrzucenia oraz komentarzem dla gracza.
+- Powiadomienia in-app i e-mail obejmuja teraz rowniez nowe propozycje umiejetnosci oraz decyzje o ich zatwierdzeniu lub odrzuceniu.
+- Zweryfikowano iteracje poleceniami: `npm --prefix server run prisma:generate`, `npm --prefix server run build`, `npm --prefix server run test`, `npm run lint`, `npm run test:web`, `npm run build:web`.
+- Uwaga operacyjna: lokalne `npm --prefix server run prisma:migrate:dev` oraz `prisma migrate status` zatrzymuja sie aktualnie na ogolnym `Schema engine error` dla bazy pod `localhost:5433`, wiec migracje `202605041930_worlds_stats` i `202605042100_skill_workflow` sa przygotowane w repo, ale nie zostaly jeszcze zastosowane na tej instancji PostgreSQL.

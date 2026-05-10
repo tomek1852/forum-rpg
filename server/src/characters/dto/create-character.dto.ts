@@ -1,4 +1,15 @@
-import { IsBoolean, IsObject, IsOptional, IsString, MaxLength, MinLength } from "class-validator";
+import { Type } from "class-transformer";
+import {
+  IsArray,
+  IsBoolean,
+  IsOptional,
+  IsString,
+  IsUUID,
+  MaxLength,
+  MinLength,
+  ValidateNested,
+} from "class-validator";
+import { CharacterStatValueInputDto } from "./character-stat-value-input.dto";
 
 export class CreateCharacterDto {
   @IsString()
@@ -31,9 +42,14 @@ export class CreateCharacterDto {
   @MaxLength(500)
   avatarUrl?: string;
 
+  @IsUUID()
+  worldId!: string;
+
   @IsOptional()
-  @IsObject()
-  statsJson?: Record<string, number | string>;
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CharacterStatValueInputDto)
+  statValues?: CharacterStatValueInputDto[];
 
   @IsOptional()
   @IsBoolean()

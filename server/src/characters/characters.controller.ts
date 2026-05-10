@@ -34,9 +34,9 @@ export class CharactersController {
   @Get(":characterId")
   getById(
     @Param("characterId") characterId: string,
-    @CurrentUser() user: { userId: string },
+    @CurrentUser() user: { userId: string; role?: string },
   ) {
-    return this.charactersService.getById(characterId, user.userId);
+    return this.charactersService.getById(characterId, user.userId, user.role);
   }
 
   @Patch(":characterId")

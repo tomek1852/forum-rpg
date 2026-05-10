@@ -3,10 +3,14 @@
 import axios from "axios";
 import { useAuthStore } from "./auth-store";
 import type {
+  AccountStatus,
   AuthResponse,
   CharacterPayload,
   CharacterResponse,
   CharactersResponse,
+  CreateSkillProposalPayload,
+  CreateStatDefinitionPayload,
+  CreateWorldPayload,
   CurrentUserResponse,
   ForumCategoriesResponse,
   ForumCategoryResponse,
@@ -14,23 +18,28 @@ import type {
   ForumReplyPayload,
   ForumThreadPayload,
   ForumThreadResponse,
-  NotificationsResponse,
   LoginPayload,
-  ModerationAccountsResponse,
   ModerationAccountMutationResponse,
-  RegisterResponse,
+  ModerationAccountsResponse,
+  NotificationsResponse,
   RegisterPayload,
+  RegisterResponse,
   RequestEmailVerificationPayload,
   RequestPasswordResetPayload,
+  ReviewSkillProposalPayload,
   ResetPasswordPayload,
   Role,
-  UpdateProfilePayload,
+  SkillProposalResponse,
+  SkillProposalsResponse,
+  StatDefinitionMutationResponse,
   UpdateAccountStatusPayload,
+  UpdateProfilePayload,
   UpdateUserRolePayload,
   UserProfileResponse,
   VerificationResponse,
   VerifyEmailPayload,
-  AccountStatus,
+  WorldMutationResponse,
+  WorldsResponse,
 } from "./types";
 
 const baseURL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001/api";
@@ -126,10 +135,7 @@ export async function loginUser(payload: LoginPayload) {
 }
 
 export async function registerUser(payload: RegisterPayload) {
-  const { data } = await publicClient.post<RegisterResponse>(
-    "/auth/register",
-    payload,
-  );
+  const { data } = await publicClient.post<RegisterResponse>("/auth/register", payload);
   return data;
 }
 
@@ -204,17 +210,54 @@ export async function getCharacter(characterId: string) {
   return data;
 }
 
+export async function getWorlds() {
+  const { data } = await api.get<WorldsResponse>("/worlds");
+  return data;
+}
+
 export async function createCharacter(payload: CharacterPayload) {
   const { data } = await api.post<CharacterResponse>("/characters", payload);
   return data;
 }
 
-export async function updateCharacter(
-  characterId: string,
-  payload: CharacterPayload,
-) {
+export async function updateCharacter(characterId: string, payload: CharacterPayload) {
   const { data } = await api.patch<CharacterResponse>(
     `/characters/${characterId}`,
+    payload,
+  );
+  return data;
+}
+
+export async function createWorld(payload: CreateWorldPayload) {
+  const { data } = await api.post<WorldMutationResponse>("/worlds", payload);
+  return data;
+}
+
+export async function createWorldStatDefinition(payload: CreateStatDefinitionPayload) {
+  const { worldId, ...body } = payload;
+  const { data } = await api.post<StatDefinitionMutationResponse>(
+    `/worlds/${worldId}/stats`,
+    body,
+  );
+  return data;
+}
+
+export async function createSkillProposal(payload: CreateSkillProposalPayload) {
+  const { data } = await api.post<SkillProposalResponse>("/skills/proposals", payload);
+  return data;
+}
+
+export async function getSkillProposalsReviewQueue() {
+  const { data } = await api.get<SkillProposalsResponse>("/skills/proposals/review");
+  return data;
+}
+
+export async function reviewSkillProposal(
+  proposalId: string,
+  payload: ReviewSkillProposalPayload,
+) {
+  const { data } = await api.patch<SkillProposalResponse>(
+    `/skills/proposals/${proposalId}/review`,
     payload,
   );
   return data;
@@ -245,10 +288,7 @@ export async function createForumThread(payload: ForumThreadPayload) {
   return data;
 }
 
-export async function createForumPost(
-  threadId: string,
-  payload: ForumReplyPayload,
-) {
+export async function createForumPost(threadId: string, payload: ForumReplyPayload) {
   const { data } = await api.post<ForumPostResponse>(
     `/forum/threads/${threadId}/posts`,
     payload,
@@ -284,10 +324,7 @@ export async function getModerationAccounts() {
   return data;
 }
 
-export async function updateModerationAccountStatus(
-  userId: string,
-  status: AccountStatus,
-) {
+export async function updateModerationAccountStatus(userId: string, status: AccountStatus) {
   const payload: UpdateAccountStatusPayload = { status };
   const { data } = await api.patch<ModerationAccountMutationResponse>(
     `/users/moderation/accounts/${userId}/status`,
@@ -318,5 +355,9 @@ export function getApiErrorMessage(error: unknown) {
     }
   }
 
-  return "Wystapil nieoczekiwany blad.";
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  return "Wystąpił nieoczekiwany błąd.";
 }

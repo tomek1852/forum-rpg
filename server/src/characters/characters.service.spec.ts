@@ -3,10 +3,14 @@ import { CharactersService } from "./characters.service";
 
 describe("CharactersService", () => {
   const prisma = {
+    world: {
+      findUnique: jest.fn(),
+    },
     character: {
       create: jest.fn(),
       findMany: jest.fn(),
       findUnique: jest.fn(),
+      findUniqueOrThrow: jest.fn(),
       update: jest.fn(),
     },
   };
@@ -19,15 +23,32 @@ describe("CharactersService", () => {
   });
 
   it("creates a character for the owner", async () => {
+    prisma.world.findUnique.mockResolvedValueOnce({
+      id: "world-1",
+      isActive: true,
+      statDefinitions: [],
+    });
     prisma.character.create.mockResolvedValueOnce({
       id: "char-1",
       ownerId: "user-1",
       name: "Aster",
     });
+    prisma.character.findUniqueOrThrow.mockResolvedValueOnce({
+      id: "char-1",
+      ownerId: "user-1",
+      name: "Aster",
+      world: {
+        id: "world-1",
+        name: "Arbor",
+        slug: "arbor",
+      },
+      statValues: [],
+    });
 
     const result = await service.create("user-1", {
       name: "Aster",
       summary: "Scout",
+      worldId: "world-1",
     });
 
     expect(prisma.character.create).toHaveBeenCalled();

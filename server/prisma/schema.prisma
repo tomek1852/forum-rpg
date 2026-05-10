@@ -23,6 +23,20 @@ enum NotificationType {
   FORUM_NEW_THREAD
   FORUM_THREAD_REPLY
   FORUM_POST_QUOTE
+  SKILL_PROPOSAL_CREATED
+  SKILL_PROPOSAL_APPROVED
+  SKILL_PROPOSAL_REJECTED
+}
+
+enum StatValueType {
+  NUMBER
+  TEXT
+}
+
+enum SkillProposalStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }
 
 model User {
@@ -47,6 +61,22 @@ model User {
   forumThreads        ForumThread[]        @relation("ForumThreadAuthor")
   forumPosts          ForumPost[]          @relation("ForumPostAuthor")
   notifications       Notification[]
+  createdSkillProposals SkillProposal[]    @relation("SkillProposalAuthor")
+  reviewedSkillProposals SkillProposal[]   @relation("SkillProposalReviewer")
+  grantedCharacterSkills CharacterSkill[]  @relation("CharacterSkillReviewer")
+}
+
+model World {
+  id              String           @id @default(uuid())
+  name            String
+  slug            String           @unique
+  summary         String?
+  description     String?
+  isActive        Boolean          @default(true)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  characters      Character[]
+  statDefinitions StatDefinition[]
 }
 
 model RefreshToken {
@@ -98,9 +128,99 @@ model Character {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   ownerId     String
+  worldId     String?
   owner       User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  world       World?   @relation(fields: [worldId], references: [id], onDelete: SetNull)
+  statValues  CharacterStatValue[]
+  skillProposals SkillProposal[]
+  skills      CharacterSkill[]
 
   @@index([ownerId])
+  @@index([worldId])
+}
+
+model SkillProposal {
+  id             String              @id @default(uuid())
+  name           String
+  description    String
+  mechanics      String?
+  costs          String?
+  limitations    String?
+  status         SkillProposalStatus @default(PENDING)
+  reviewerComment String?
+  reviewedAt     DateTime?
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+  characterId    String
+  proposerId     String
+  reviewerId     String?
+  character      Character           @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  proposer       User                @relation("SkillProposalAuthor", fields: [proposerId], references: [id], onDelete: Cascade)
+  reviewer       User?               @relation("SkillProposalReviewer", fields: [reviewerId], references: [id], onDelete: SetNull)
+  createdSkill   CharacterSkill?
+
+  @@index([characterId, status, createdAt])
+  @@index([proposerId, status, createdAt])
+  @@index([reviewerId])
+}
+
+model CharacterSkill {
+  id             String        @id @default(uuid())
+  name           String
+  description    String
+  mechanics      String?
+  costs          String?
+  limitations    String?
+  grantedAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  characterId    String
+  approvedById   String?
+  sourceProposalId String?     @unique
+  character      Character     @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  approvedBy     User?         @relation("CharacterSkillReviewer", fields: [approvedById], references: [id], onDelete: SetNull)
+  sourceProposal SkillProposal? @relation(fields: [sourceProposalId], references: [id], onDelete: SetNull)
+
+  @@index([characterId, grantedAt])
+  @@index([approvedById])
+}
+
+model StatDefinition {
+  id                  String               @id @default(uuid())
+  key                 String
+  label               String
+  description         String?
+  valueType           StatValueType        @default(NUMBER)
+  minValue            Int?
+  maxValue            Int?
+  defaultNumericValue Int?
+  defaultTextValue    String?
+  isRequired          Boolean              @default(false)
+  isActive            Boolean              @default(true)
+  position            Int                  @default(0)
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  worldId             String
+  world               World                @relation(fields: [worldId], references: [id], onDelete: Cascade)
+  characterValues     CharacterStatValue[]
+
+  @@unique([worldId, key])
+  @@index([worldId, position])
+}
+
+model CharacterStatValue {
+  id               String         @id @default(uuid())
+  numericValue     Int?
+  textValue        String?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  characterId      String
+  statDefinitionId String
+  character        Character      @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  statDefinition   StatDefinition @relation(fields: [statDefinitionId], references: [id], onDelete: Cascade)
+
+  @@unique([characterId, statDefinitionId])
+  @@index([characterId])
+  @@index([statDefinitionId])
 }
 
 model ForumCategory {

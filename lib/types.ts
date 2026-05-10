@@ -1,5 +1,7 @@
 export type Role = "PLAYER" | "GM" | "ADMIN";
 export type AccountStatus = "PENDING_APPROVAL" | "ACTIVE" | "BLOCKED";
+export type StatValueType = "NUMBER" | "TEXT";
+export type SkillProposalStatus = "PENDING" | "APPROVED" | "REJECTED";
 
 export interface User {
   id: string;
@@ -45,6 +47,92 @@ export interface UserProfileResponse {
   user: User;
 }
 
+export interface StatDefinition {
+  id: string;
+  key: string;
+  label: string;
+  description: string | null;
+  valueType: StatValueType;
+  minValue: number | null;
+  maxValue: number | null;
+  defaultNumericValue: number | null;
+  defaultTextValue: string | null;
+  isRequired: boolean;
+  isActive: boolean;
+  position: number;
+  worldId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CharacterStatValue {
+  id: string;
+  numericValue: number | null;
+  textValue: string | null;
+  createdAt: string;
+  updatedAt: string;
+  statDefinition: StatDefinition;
+}
+
+export interface CharacterSkill {
+  id: string;
+  name: string;
+  description: string;
+  mechanics: string | null;
+  costs: string | null;
+  limitations: string | null;
+  grantedAt: string;
+  updatedAt: string;
+  characterId: string;
+  approvedById: string | null;
+  sourceProposalId: string | null;
+}
+
+export interface SkillProposal {
+  id: string;
+  name: string;
+  description: string;
+  mechanics: string | null;
+  costs: string | null;
+  limitations: string | null;
+  status: SkillProposalStatus;
+  reviewerComment: string | null;
+  reviewedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  characterId: string;
+  proposerId: string;
+  reviewerId: string | null;
+  character: {
+    id: string;
+    name: string;
+    ownerId: string;
+  };
+  proposer: {
+    id: string;
+    username: string;
+    displayName: string | null;
+  };
+  reviewer: {
+    id: string;
+    username: string;
+    displayName: string | null;
+  } | null;
+  createdSkill: CharacterSkill | null;
+}
+
+export interface World {
+  id: string;
+  name: string;
+  slug: string;
+  summary: string | null;
+  description: string | null;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+  statDefinitions: StatDefinition[];
+}
+
 export interface Character {
   id: string;
   name: string;
@@ -54,6 +142,10 @@ export interface Character {
   appearance: string | null;
   avatarUrl: string | null;
   statsJson: Record<string, string | number> | null;
+  world: Pick<World, "id" | "name" | "slug"> | null;
+  statValues: CharacterStatValue[];
+  skills: CharacterSkill[];
+  skillProposals: SkillProposal[];
   isPublic: boolean;
   ownerId: string;
   createdAt: string;
@@ -66,6 +158,33 @@ export interface CharacterResponse {
 
 export interface CharactersResponse {
   characters: Character[];
+}
+
+export interface WorldsResponse {
+  worlds: World[];
+}
+
+export interface WorldResponse {
+  world: World;
+}
+
+export interface WorldMutationResponse {
+  message: string;
+  world: World;
+}
+
+export interface StatDefinitionMutationResponse {
+  message: string;
+  statDefinition: StatDefinition;
+}
+
+export interface SkillProposalResponse {
+  message: string;
+  proposal: SkillProposal;
+}
+
+export interface SkillProposalsResponse {
+  proposals: SkillProposal[];
 }
 
 export interface ForumAuthor {
@@ -157,7 +276,10 @@ export interface ForumPostResponse {
 export type NotificationType =
   | "FORUM_NEW_THREAD"
   | "FORUM_THREAD_REPLY"
-  | "FORUM_POST_QUOTE";
+  | "FORUM_POST_QUOTE"
+  | "SKILL_PROPOSAL_CREATED"
+  | "SKILL_PROPOSAL_APPROVED"
+  | "SKILL_PROPOSAL_REJECTED";
 
 export interface Notification {
   id: string;
@@ -221,13 +343,53 @@ export interface UpdateProfilePayload {
 
 export interface CharacterPayload {
   name: string;
+  worldId: string;
   title?: string;
   summary?: string;
   biography?: string;
   appearance?: string;
   avatarUrl?: string;
-  statsJson?: Record<string, string | number>;
+  statValues?: Array<{
+    statDefinitionId: string;
+    numericValue?: number;
+    textValue?: string;
+  }>;
   isPublic?: boolean;
+}
+
+export interface CreateWorldPayload {
+  name: string;
+  slug?: string;
+  summary?: string;
+  description?: string;
+}
+
+export interface CreateStatDefinitionPayload {
+  worldId: string;
+  key: string;
+  label: string;
+  description?: string;
+  valueType?: StatValueType;
+  minValue?: number;
+  maxValue?: number;
+  defaultNumericValue?: number;
+  defaultTextValue?: string;
+  isRequired?: boolean;
+  position?: number;
+}
+
+export interface CreateSkillProposalPayload {
+  characterId: string;
+  name: string;
+  description: string;
+  mechanics?: string;
+  costs?: string;
+  limitations?: string;
+}
+
+export interface ReviewSkillProposalPayload {
+  status: SkillProposalStatus;
+  reviewerComment?: string;
 }
 
 export interface ForumThreadPayload {

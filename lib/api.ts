@@ -10,11 +10,13 @@ import type {
   CharacterRankingsResponse,
   CharacterResponse,
   CharactersResponse,
+  CreateConversationPayload,
   CreateSkillProposalPayload,
   CreateStatDefinitionPayload,
-  CreateWorldPayload,
   CreateEventPayload,
   CreateEventParticipationPayload,
+  CreateWorldLogPayload,
+  CreateWorldPayload,
   CurrentUserResponse,
   EventMutationResponse,
   EventParticipationResponse,
@@ -48,7 +50,6 @@ import type {
   SkillProposalResponse,
   SkillProposalsResponse,
   StatDefinitionMutationResponse,
-  CreateConversationPayload,
   UpdateAccountStatusPayload,
   UpdateEventPayload,
   UpdateProfilePayload,
@@ -56,6 +57,8 @@ import type {
   UserProfileResponse,
   VerificationResponse,
   VerifyEmailPayload,
+  WorldLogResponse,
+  WorldLogsResponse,
   WorldMutationResponse,
   WorldsResponse,
 } from "./types";
@@ -248,6 +251,11 @@ export async function getWorlds() {
   return data;
 }
 
+export async function getWorldLogs(worldId: string) {
+  const { data } = await api.get<WorldLogsResponse>(`/worlds/${worldId}/world-log`);
+  return data;
+}
+
 export async function getEvents() {
   const { data } = await api.get<EventsResponse>("/events");
   return data;
@@ -323,6 +331,14 @@ export async function addCharacterProgress(
 
 export async function createWorld(payload: CreateWorldPayload) {
   const { data } = await api.post<WorldMutationResponse>("/worlds", payload);
+  return data;
+}
+
+export async function createWorldLog(worldId: string, payload: CreateWorldLogPayload) {
+  const { data } = await api.post<WorldLogResponse>(
+    `/worlds/${worldId}/world-log`,
+    payload,
+  );
   return data;
 }
 

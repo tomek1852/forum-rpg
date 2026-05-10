@@ -76,6 +76,7 @@ model User {
   grantedProgressEntries ProgressEntry[]   @relation("ProgressEntryGrantor")
   createdEvents       Event[]              @relation("EventCreator")
   reviewedEventParticipations EventParticipation[] @relation("EventParticipationReviewer")
+  createdWorldLogs    WorldLog[]           @relation("WorldLogAuthor")
 }
 
 model World {
@@ -89,6 +90,22 @@ model World {
   updatedAt       DateTime         @updatedAt
   characters      Character[]
   statDefinitions StatDefinition[]
+  worldLogs       WorldLog[]
+}
+
+model WorldLog {
+  id        String   @id @default(uuid())
+  title     String
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  worldId   String
+  authorId  String
+  world     World    @relation(fields: [worldId], references: [id], onDelete: Cascade)
+  author    User     @relation("WorldLogAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([worldId, createdAt])
+  @@index([authorId, createdAt])
 }
 
 model RefreshToken {

@@ -130,6 +130,17 @@ export const worldSchema = z.object({
     .or(z.literal("")),
 });
 
+export const worldLogSchema = z.object({
+  title: z
+    .string()
+    .min(2, "Tytul wpisu musi miec co najmniej 2 znaki.")
+    .max(120, "Tytul wpisu moze miec maksymalnie 120 znakow."),
+  content: z
+    .string()
+    .min(1, "Wpisz tresc wpisu WorldLog.")
+    .max(5000, "Wpis WorldLog jest za dlugi."),
+});
+
 const optionalIntegerField = z
   .string()
   .refine((value) => value.trim() === "" || /^-?\d+$/.test(value.trim()), {

@@ -1,5 +1,8 @@
 import { defineConfig, devices } from "@playwright/test";
 
+const webServerCommand =
+  process.platform === "win32" ? "npm.cmd run dev:web" : "npm run dev:web";
+
 export default defineConfig({
   testDir: "./e2e",
   timeout: 30_000,
@@ -14,7 +17,7 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: "npm run dev:web",
+    command: webServerCommand,
     url: "http://127.0.0.1:3000",
     reuseExistingServer: !process.env.CI,
   },

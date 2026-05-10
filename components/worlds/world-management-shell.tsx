@@ -228,6 +228,9 @@ export function WorldManagementShell() {
             </div>
             <div className="flex flex-wrap gap-3">
               <Button asChild size="lg" variant="secondary">
+                <Link href="/worlds">WorldLog</Link>
+              </Button>
+              <Button asChild size="lg" variant="secondary">
                 <Link href="/events">Eventy</Link>
               </Button>
               <Button asChild size="lg" variant="secondary">
@@ -445,6 +448,9 @@ export function WorldManagementShell() {
                           {world.summary ?? "Brak krótkiego opisu świata."}
                         </CardDescription>
                       </div>
+                      <Button asChild variant="secondary">
+                        <Link href={`/worlds/${world.id}`}>WorldLog</Link>
+                      </Button>
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-4">

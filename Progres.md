@@ -132,3 +132,13 @@
 - Dashboard i panel `mg` dostaly skroty do eventow, a karta eventu pokazuje zaakceptowanych uczestnikow, oczekujace zgloszenia i podstawowe metadane terminu.
 - Dodano testy backendowe potwierdzajace utworzenie eventu, zapis postaci do eventu i akceptacje uczestnictwa przez `GM/Admin`.
 - Zweryfikowano iteracje poleceniami: `npx.cmd prisma generate --no-engine` w `server`, `npm.cmd run lint`, `npm.cmd run test`, `npm.cmd run build`, `npm.cmd run test:e2e`.
+
+## 2026-05-10 - ETAP 3 - WorldLog MVP - IN PROGRESS
+
+- Dodano model `WorldLog` wraz z migracja Prisma oraz relacjami do `World` i autora wpisu `User`.
+- Rozszerzono backendowy modul `worlds` o endpointy `GET /worlds/:worldId/world-log` i `POST /worlds/:worldId/world-log`, przy czym tworzenie wpisow zostalo ograniczone do rol `GM` i `ADMIN`.
+- Logika backendu waliduje istnienie aktywnego swiata, normalizuje tresc wpisu i zwraca wpisy WorldLog w kolejnosci od najnowszych.
+- Dodano testy backendowe potwierdzajace mozliwosc dodania wpisu WorldLog oraz poprawne pobieranie listy wpisow dla swiata.
+- Zaimplementowano frontendowe widoki `/worlds` i `/worlds/[worldId]` z lista swiatow, przegladem wpisow WorldLog i prostym formularzem dodawania dla `GM/Admin`.
+- Dashboard i panel `mg` dostaly skroty do WorldLoga, a konfiguracja `Playwright` zostala dopasowana do uruchamiania `webServer` przez `npm.cmd` na Windows.
+- Zweryfikowano iteracje poleceniami: `npm.cmd --prefix server run prisma:generate`, `npm.cmd run lint`, `npm.cmd run test`, `npm.cmd run build`, `npx.cmd playwright test --reporter=line` przy lokalnie uruchomionym `npm.cmd run dev:web`.

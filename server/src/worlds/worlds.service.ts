@@ -1,12 +1,14 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Inject,
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
-import { Prisma, StatValueType } from "@prisma/client";
+import { Prisma, StatValueType, UserRole } from "@prisma/client";
 import { PrismaService } from "../prisma/prisma.service";
+import { CreateWorldLogDto } from "./dto/create-world-log.dto";
 import { CreateStatDefinitionDto } from "./dto/create-stat-definition.dto";
 import { CreateWorldDto } from "./dto/create-world.dto";
 
@@ -16,6 +18,16 @@ const worldInclude = {
     orderBy: [{ position: "asc" }, { createdAt: "asc" }],
   },
 } satisfies Prisma.WorldInclude;
+
+const worldLogInclude = {
+  author: {
+    select: {
+      id: true,
+      username: true,
+      displayName: true,
+    },
+  },
+} satisfies Prisma.WorldLogInclude;
 
 @Injectable()
 export class WorldsService {
@@ -42,6 +54,41 @@ export class WorldsService {
     }
 
     return { world };
+  }
+
+  async listWorldLogs(worldId: string) {
+    const world = await this.prisma.world.findUnique({
+      where: { id: worldId },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        summary: true,
+        description: true,
+        isActive: true,
+      },
+    });
+
+    if (!world || !world.isActive) {
+      throw new NotFoundException("Nie znaleziono swiata.");
+    }
+
+    const entries = await this.prisma.worldLog.findMany({
+      where: { worldId },
+      include: worldLogInclude,
+      orderBy: [{ createdAt: "desc" }],
+    });
+
+    return {
+      world: {
+        id: world.id,
+        name: world.name,
+        slug: world.slug,
+        summary: world.summary,
+        description: world.description,
+      },
+      entries,
+    };
   }
 
   async createWorld(dto: CreateWorldDto) {
@@ -114,6 +161,39 @@ export class WorldsService {
     }
   }
 
+  async createWorldLog(
+    worldId: string,
+    authorId: string,
+    authorRole: UserRole | string | undefined,
+    dto: CreateWorldLogDto,
+  ) {
+    this.assertManagerRole(authorRole);
+
+    const world = await this.prisma.world.findUnique({
+      where: { id: worldId },
+      select: { id: true, isActive: true },
+    });
+
+    if (!world || !world.isActive) {
+      throw new NotFoundException("Nie znaleziono swiata.");
+    }
+
+    const entry = await this.prisma.worldLog.create({
+      data: {
+        worldId,
+        authorId,
+        title: dto.title.trim(),
+        content: dto.content.trim(),
+      },
+      include: worldLogInclude,
+    });
+
+    return {
+      message: "Wpis WorldLog zostal dodany.",
+      entry,
+    };
+  }
+
   private normalizeSlug(input: string) {
     const slug = input
       .trim()
@@ -172,5 +252,11 @@ export class WorldsService {
       error instanceof Prisma.PrismaClientKnownRequestError &&
       error.code === "P2002"
     );
+  }
+
+  private assertManagerRole(role?: UserRole | string) {
+    if (role !== UserRole.GM && role !== UserRole.ADMIN) {
+      throw new ForbiddenException("Tylko GM lub administrator moze dodawac wpisy WorldLog.");
+    }
   }
 }

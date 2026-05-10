@@ -164,6 +164,21 @@ export interface World {
   statDefinitions: StatDefinition[];
 }
 
+export interface WorldLogEntry {
+  id: string;
+  title: string;
+  content: string;
+  worldId: string;
+  authorId: string;
+  createdAt: string;
+  updatedAt: string;
+  author: {
+    id: string;
+    username: string;
+    displayName: string | null;
+  };
+}
+
 export interface Character {
   id: string;
   name: string;
@@ -280,6 +295,16 @@ export interface WorldResponse {
 export interface WorldMutationResponse {
   message: string;
   world: World;
+}
+
+export interface WorldLogsResponse {
+  world: Pick<World, "id" | "name" | "slug" | "summary" | "description">;
+  entries: WorldLogEntry[];
+}
+
+export interface WorldLogResponse {
+  message: string;
+  entry: WorldLogEntry;
 }
 
 export interface EventsResponse {
@@ -533,6 +558,11 @@ export interface CreateWorldPayload {
   slug?: string;
   summary?: string;
   description?: string;
+}
+
+export interface CreateWorldLogPayload {
+  title: string;
+  content: string;
 }
 
 export interface CreateEventPayload {

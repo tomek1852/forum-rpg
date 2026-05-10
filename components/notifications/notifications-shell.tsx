@@ -19,12 +19,19 @@ import {
   markAllNotificationsAsRead,
   markNotificationAsRead,
 } from "@/lib/api";
+import { useNotificationsRealtime } from "@/lib/notifications-realtime";
 import { useAuthStore } from "@/lib/auth-store";
 
 export function NotificationsShell() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { accessToken, hydrated } = useAuthStore((state) => state);
+
+  useNotificationsRealtime({
+    accessToken,
+    hydrated,
+    queryClient,
+  });
 
   useEffect(() => {
     if (hydrated && !accessToken) {

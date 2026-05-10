@@ -21,6 +21,10 @@ import {
   sendPrivateMessage,
 } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
+import {
+  applyConversationReadEvent,
+  applyMessageCreatedEvent,
+} from "@/lib/messages-realtime";
 import { disconnectMessagesSocket, getMessagesSocket } from "@/lib/messages-socket";
 import type {
   MessageParticipant,
@@ -215,29 +219,8 @@ export function MessagesShell() {
       if (event.conversationId === selectedConversationIdRef.current) {
         queryClient.setQueryData<ConversationDetails | undefined>(
           ["messages", "conversation", event.conversationId],
-          (current) => {
-            if (!current) {
-              return current;
-            }
-
-            if (current.messages.some((message) => message.id === event.message.id)) {
-              return current;
-            }
-
-            return {
-              ...current,
-              conversation: {
-                ...current.conversation,
-                lastMessage: event.message,
-                lastMessageAt: event.message.createdAt,
-                unreadCount:
-                  event.message.senderId === currentUserIdRef.current
-                    ? current.conversation.unreadCount
-                    : current.conversation.unreadCount + 1,
-              },
-              messages: [...current.messages, event.message],
-            };
-          },
+          (current) =>
+            applyMessageCreatedEvent(current, event, currentUserIdRef.current),
         );
       }
 
@@ -251,30 +234,8 @@ export function MessagesShell() {
       if (event.conversationId === selectedConversationIdRef.current) {
         queryClient.setQueryData<ConversationDetails | undefined>(
           ["messages", "conversation", event.conversationId],
-          (current) => {
-            if (!current) {
-              return current;
-            }
-
-            return {
-              ...current,
-              conversation: {
-                ...current.conversation,
-                unreadCount:
-                  event.readByUserId === currentUserIdRef.current
-                    ? 0
-                    : current.conversation.unreadCount,
-              },
-              messages: current.messages.map((message) =>
-                message.senderId === currentUserIdRef.current && !message.readAt
-                  ? {
-                      ...message,
-                      readAt: new Date().toISOString(),
-                    }
-                  : message,
-              ),
-            };
-          },
+          (current) =>
+            applyConversationReadEvent(current, event, currentUserIdRef.current),
         );
       }
 

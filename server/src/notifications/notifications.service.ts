@@ -2,6 +2,7 @@ import { Inject, Injectable, NotFoundException } from "@nestjs/common";
 import { NotificationType } from "@prisma/client";
 import { MailerService } from "../mailer/mailer.service";
 import { PrismaService } from "../prisma/prisma.service";
+import { NotificationsRealtimeService } from "./notifications-realtime.service";
 
 type NotificationCreateInput = {
   userId: string;
@@ -16,6 +17,8 @@ export class NotificationsService {
   constructor(
     @Inject(PrismaService) private readonly prisma: PrismaService,
     @Inject(MailerService) private readonly mailerService: MailerService,
+    @Inject(NotificationsRealtimeService)
+    private readonly notificationsRealtimeService: NotificationsRealtimeService,
   ) {}
 
   async listMine(userId: string) {
@@ -104,15 +107,44 @@ export class NotificationsService {
       return;
     }
 
-    await this.prisma.notification.createMany({
-      data: values.map((entry) => ({
-        userId: entry.userId,
-        type: entry.type,
-        title: entry.title,
-        message: entry.message,
-        link: entry.link,
-      })),
-    });
+    const createdNotifications = await this.prisma.$transaction((tx) =>
+      Promise.all(
+        values.map((entry) =>
+          tx.notification.create({
+            data: {
+              userId: entry.userId,
+              type: entry.type,
+              title: entry.title,
+              message: entry.message,
+              link: entry.link,
+            },
+          }),
+        ),
+      ),
+    );
+
+    const uniqueRecipientIds = [...new Set(values.map((entry) => entry.userId))];
+    const unreadCountEntries = await Promise.all(
+      uniqueRecipientIds.map(
+        async (userId): Promise<[string, number]> => [
+          userId,
+          await this.prisma.notification.count({
+            where: {
+              userId,
+              isRead: false,
+            },
+          }),
+        ],
+      ),
+    );
+    const unreadCounts = new Map<string, number>(unreadCountEntries);
+
+    for (const notification of createdNotifications) {
+      this.notificationsRealtimeService.emitNotificationCreated(notification.userId, {
+        notification,
+        unreadCount: unreadCounts.get(notification.userId) ?? 0,
+      });
+    }
 
     const recipients = await this.prisma.user.findMany({
       where: {

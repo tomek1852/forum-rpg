@@ -18,9 +18,11 @@ import {
   getApiErrorMessage,
   getCurrentUser,
   getMyCharacters,
+  getNotifications,
   logoutUser,
 } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
+import { useNotificationsRealtime } from "@/lib/notifications-realtime";
 
 export function DashboardShell() {
   const router = useRouter();
@@ -37,6 +39,17 @@ export function DashboardShell() {
     queryKey: ["my-characters"],
     queryFn: getMyCharacters,
     enabled: hydrated && Boolean(accessToken),
+  });
+  const notificationsQuery = useQuery({
+    queryKey: ["notifications"],
+    queryFn: getNotifications,
+    enabled: hydrated && Boolean(accessToken),
+  });
+
+  useNotificationsRealtime({
+    accessToken,
+    hydrated,
+    queryClient,
   });
 
   useEffect(() => {
@@ -100,6 +113,7 @@ export function DashboardShell() {
   const profile = profileQuery.data?.user ?? user;
   const characters = charactersQuery.data?.characters ?? [];
   const canModerate = profile?.role === "GM" || profile?.role === "ADMIN";
+  const unreadNotifications = notificationsQuery.data?.unreadCount ?? 0;
 
   return (
     <div className="min-h-screen px-4 py-10 lg:px-8">
@@ -123,7 +137,14 @@ export function DashboardShell() {
                 <Link href="/forum">Forum</Link>
               </Button>
               <Button asChild size="lg" variant="secondary">
-                <Link href="/notifications">Powiadomienia</Link>
+                <Link className="inline-flex items-center gap-2" href="/notifications">
+                  <span>Powiadomienia</span>
+                  {unreadNotifications ? (
+                    <span className="inline-flex h-7 min-w-7 items-center justify-center rounded-full bg-[color:var(--accent)] px-2 text-xs font-semibold text-white">
+                      {unreadNotifications}
+                    </span>
+                  ) : null}
+                </Link>
               </Button>
               <Button asChild size="lg" variant="secondary">
                 <Link href="/messages">Wiadomosci</Link>

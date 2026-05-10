@@ -113,3 +113,12 @@
 - Frontend `/messages` przestal wymagac recznego wpisywania `UUID` odbiorcy; formularz nowej rozmowy pozwala teraz wyszukac gracza po nazwie i wybrac go z listy wynikow.
 - Skrzynka wiadomosci zachowuje dotychczasowy flow rozpoczecia rozmowy z profilu gracza, ale pozwala tez zalozyc nowa konwersacje bez znajomosci technicznego identyfikatora uzytkownika.
 - Zweryfikowano iteracje poleceniami: `npx.cmd eslint components/messages/messages-shell.tsx lib/api.ts lib/types.ts --max-warnings=0`, `npm.cmd --prefix server run build`, `npm.cmd run build:web`.
+
+## 2026-05-10 - ETAP 3 - realtime notifications i odswiezanie dashboardu - IN PROGRESS
+
+- Dodano backendowy gateway `notifications-realtime` w NestJS z autoryzacja JWT w handshake i pokojami per uzytkownik, bez przebudowy istniejacych endpointow REST.
+- `NotificationsService.createForUsers` zapisuje teraz powiadomienia w transakcji, liczy aktualny `unreadCount` i emituje event `notification.created` do odbiorcy zaraz po utworzeniu wpisu.
+- Frontend dostal klienta Socket.io dla powiadomien oraz wspolny helper aktualizacji cache, dzieki czemu `/notifications` odswieza liste i licznik bez recznego refreshu.
+- Dashboard pokazuje teraz realtime badge nieprzeczytanych powiadomien, a logika aktualizacji `/messages` zostala wydzielona do testowalnych helperow cache bez zmian w REST API.
+- Dodano testy dla helperow realtime po stronie frontendu i rozszerzono test `NotificationsService` o emisje `notification.created`; smoke test Playwright zostal tez ustabilizowany pod aktualne etykiety CTA.
+- Zweryfikowano iteracje poleceniami: `npm.cmd run lint`, `npm.cmd run test`, `npm.cmd run build`, `npm.cmd run test:e2e`.

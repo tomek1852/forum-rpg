@@ -21,6 +21,7 @@ import {
   updateModerationUserRole,
 } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
+import { PresenceBadge } from "@/components/presence-badge";
 import type { AccountStatus, Role, User } from "@/lib/types";
 
 const MODERATOR_ROLES: Role[] = ["GM", "ADMIN"];
@@ -292,10 +293,11 @@ function AccountCard({
       <CardHeader>
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Badge>{formatStatus(account.status)}</Badge>
               <Badge>{formatRole(account.role)}</Badge>
               {account.emailVerified ? <Badge>E-mail OK</Badge> : <Badge>Brak weryfikacji</Badge>}
+              <PresenceBadge status={account.presenceStatus} showLabel />
             </div>
             <CardTitle className="mt-3 text-2xl">
               {account.displayName || account.username}

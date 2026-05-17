@@ -20,6 +20,7 @@ export type PublicUser = Pick<
   | "role"
   | "status"
   | "emailVerified"
+  | "presenceStatus"
   | "lastSeenAt"
   | "createdAt"
   | "updatedAt"

@@ -133,6 +133,16 @@
 - Dodano testy backendowe potwierdzajace utworzenie eventu, zapis postaci do eventu i akceptacje uczestnictwa przez `GM/Admin`.
 - Zweryfikowano iteracje poleceniami: `npx.cmd prisma generate --no-engine` w `server`, `npm.cmd run lint`, `npm.cmd run test`, `npm.cmd run build`, `npm.cmd run test:e2e`.
 
+## 2026-05-17 - ETAP 3 - DONE
+
+- Zaimplementowano system obecnosci (presence) przez Socket.io z nowym gateway `presence-realtime`, odrebnym od istniejacych gatewayow wiadomosci i powiadomien.
+- Dodano enum `PresenceStatus` (`ONLINE`, `AWAY`, `OFFLINE`) i pole `presenceStatus` do modelu `User` wraz z migracja `202605171200_presence_status`.
+- Backend gateway obsluguje JWT handshake, heartbeat od klientow co 30s, przejscie w `AWAY` po 60s braku sygnalu oraz `OFFLINE` po 5min; rozlaczenie socketa natychmiast ustawia `OFFLINE`.
+- Frontend dostal klienta socket (`lib/presence-socket.ts`), hook `usePresence` z automatycznym heartbeatem i subskrypcja zmian statusu, oraz komponent `PresenceBadge` z kolorowym wskaznikiem i etykieta.
+- Badge statusu obecnosci pojawia sie na stronie `/profile/:userId` obok roli uzytkownika (live aktualizacja przez socket) oraz na liscie kont w panelu moderacji (status z bazy danych).
+- Zweryfikowano integracje WorldLog: endpoint `GET/POST /worlds/:worldId/world-log`, widok `/worlds/[worldId]` z pelna lista wpisow, formularzem dla GM/Admin i poprawnym routingiem.
+- Zweryfikowano iteracje poleceniami: `npm.cmd --prefix server run build`, `npm.cmd --prefix server run test`, `npm.cmd run lint`, `npm.cmd run build:web`.
+
 ## 2026-05-10 - ETAP 3 - WorldLog MVP - IN PROGRESS
 
 - Dodano model `WorldLog` wraz z migracja Prisma oraz relacjami do `World` i autora wpisu `User`.

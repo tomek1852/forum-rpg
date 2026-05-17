@@ -22,6 +22,8 @@ import {
   getUserProfile,
 } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
+import { PresenceBadge } from "@/components/presence-badge";
+import { usePresence } from "@/lib/presence-realtime";
 import { ProfileForm } from "./profile-form";
 
 export function ProfileShell({ userId }: { userId: string }) {
@@ -29,6 +31,12 @@ export function ProfileShell({ userId }: { userId: string }) {
   const { accessToken, hydrated, user, setUser, clearSession } = useAuthStore(
     (state) => state,
   );
+
+  const presenceStatuses = usePresence({
+    accessToken,
+    hydrated,
+    watchUserIds: userId ? [userId] : [],
+  });
 
   const currentUserQuery = useQuery({
     queryKey: ["current-user"],
@@ -101,7 +109,13 @@ export function ProfileShell({ userId }: { userId: string }) {
         <header className="rounded-[36px] border border-[color:var(--border)] bg-[color:var(--hero)] p-8 shadow-[0_18px_70px_rgba(84,53,29,0.16)]">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div className="space-y-4">
-              <Badge>{profile.role}</Badge>
+              <div className="flex items-center gap-2">
+                <Badge>{profile.role}</Badge>
+                <PresenceBadge
+                  status={presenceStatuses[userId]}
+                  showLabel
+                />
+              </div>
               <div>
                 <h1 className="font-display text-5xl text-[color:var(--foreground)]">
                   {profile.displayName || profile.username}

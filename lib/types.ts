@@ -1,5 +1,6 @@
 export type Role = "PLAYER" | "GM" | "ADMIN";
 export type AccountStatus = "PENDING_APPROVAL" | "ACTIVE" | "BLOCKED";
+export type PresenceStatus = "ONLINE" | "AWAY" | "OFFLINE";
 export type StatValueType = "NUMBER" | "TEXT";
 export type SkillProposalStatus = "PENDING" | "APPROVED" | "REJECTED";
 export type EventParticipationStatus = "PENDING" | "APPROVED" | "REJECTED";
@@ -14,6 +15,7 @@ export interface User {
   role: Role;
   status: AccountStatus;
   emailVerified: boolean;
+  presenceStatus: PresenceStatus;
   lastSeenAt: string | null;
   createdAt: string;
   updatedAt: string;

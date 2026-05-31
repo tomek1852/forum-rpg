@@ -19,7 +19,8 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { createForumPost, getApiErrorMessage, getForumThread } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
-import type { ForumPost } from "@/lib/types";
+import { ReportModal } from "@/components/moderation/report-modal";
+import type { ForumPost, ModerationReportTargetType } from "@/lib/types";
 import { forumReplySchema } from "@/lib/validators";
 
 type ForumReplyFormValues = z.input<typeof forumReplySchema>;
@@ -35,6 +36,11 @@ export function ForumThreadShell({
   const queryClient = useQueryClient();
   const { accessToken, hydrated } = useAuthStore((state) => state);
   const [selectedQuote, setSelectedQuote] = useState<ForumPost | null>(null);
+  const [reportTarget, setReportTarget] = useState<{
+    type: ModerationReportTargetType;
+    id: string;
+    label: string;
+  } | null>(null);
 
   useEffect(() => {
     if (hydrated && !accessToken) {
@@ -103,6 +109,7 @@ export function ForumThreadShell({
   }
 
   return (
+    <>
     <div className="min-h-screen px-4 py-10 lg:px-8">
       <div className="mx-auto max-w-5xl space-y-6">
         <header className="overflow-hidden rounded-[36px] border border-[color:var(--border)] bg-[color:var(--hero)] p-8 shadow-[0_18px_70px_rgba(84,53,29,0.16)]">
@@ -134,6 +141,22 @@ export function ForumThreadShell({
                     Nowy wątek
                   </Link>
                 </Button>
+                {query.data?.thread ? (
+                  <Button
+                    type="button"
+                    size="lg"
+                    variant="secondary"
+                    onClick={() =>
+                      setReportTarget({
+                        type: "THREAD",
+                        id: query.data.thread.id,
+                        label: `wątek "${query.data.thread.title}"`,
+                      })
+                    }
+                  >
+                    Zgłoś wątek
+                  </Button>
+                ) : null}
               </div>
             </div>
           </div>
@@ -167,15 +190,30 @@ export function ForumThreadShell({
                       {getAuthorLabel(post.author)} · {formatForumDate(post.createdAt)}
                     </CardDescription>
                   </div>
-                  {canReply ? (
+                  <div className="flex flex-wrap gap-2">
+                    {canReply ? (
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={() => setSelectedQuote(post)}
+                      >
+                        Cytuj
+                      </Button>
+                    ) : null}
                     <Button
                       type="button"
                       variant="secondary"
-                      onClick={() => setSelectedQuote(post)}
+                      onClick={() =>
+                        setReportTarget({
+                          type: "POST",
+                          id: post.id,
+                          label: "post",
+                        })
+                      }
                     >
-                      Cytuj
+                      Zgłoś
                     </Button>
-                  ) : null}
+                  </div>
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -252,6 +290,15 @@ export function ForumThreadShell({
         </Card>
       </div>
     </div>
+    {reportTarget ? (
+      <ReportModal
+        targetType={reportTarget.type}
+        targetId={reportTarget.id}
+        label={reportTarget.label}
+        onClose={() => setReportTarget(null)}
+      />
+    ) : null}
+    </>
   );
 }
 

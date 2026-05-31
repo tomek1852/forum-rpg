@@ -4,6 +4,7 @@ import { AuthModule } from "./auth/auth.module";
 import { CharactersModule } from "./characters/characters.module";
 import { EventsModule } from "./events/events.module";
 import { ForumModule } from "./forum/forum.module";
+import { ModerationModule } from "./moderation/moderation.module";
 import { MailerModule } from "./mailer/mailer.module";
 import { MessagesModule } from "./messages/messages.module";
 import { NotificationsModule } from "./notifications/notifications.module";
@@ -30,6 +31,7 @@ import { WorldsModule } from "./worlds/worlds.module";
     NotificationsModule,
     PresenceModule,
     ForumModule,
+    ModerationModule,
     AuthModule,
   ],
 })

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { CharacterCard } from "@/components/characters/character-card";
@@ -21,6 +21,7 @@ import {
   getMyCharacters,
   getUserProfile,
 } from "@/lib/api";
+import { ReportModal } from "@/components/moderation/report-modal";
 import { useAuthStore } from "@/lib/auth-store";
 import { PresenceBadge } from "@/components/presence-badge";
 import { usePresence } from "@/lib/presence-realtime";
@@ -61,6 +62,8 @@ export function ProfileShell({ userId }: { userId: string }) {
     },
     enabled: hydrated && Boolean(accessToken) && !currentUserQuery.isLoading,
   });
+
+  const [showReportModal, setShowReportModal] = useState(false);
 
   useEffect(() => {
     if (hydrated && !accessToken) {
@@ -104,6 +107,7 @@ export function ProfileShell({ userId }: { userId: string }) {
   const characters = charactersQuery.data?.characters ?? [];
 
   return (
+    <>
     <div className="min-h-screen px-4 py-10 lg:px-8">
       <div className="mx-auto max-w-6xl space-y-6">
         <header className="rounded-[36px] border border-[color:var(--border)] bg-[color:var(--hero)] p-8 shadow-[0_18px_70px_rgba(84,53,29,0.16)]">
@@ -131,9 +135,19 @@ export function ProfileShell({ userId }: { userId: string }) {
                   <Link href="/character/new">Nowa postac</Link>
                 </Button>
               ) : (
-                <Button asChild size="lg">
-                  <Link href={`/messages?participantId=${profile.id}`}>Napisz wiadomosc</Link>
-                </Button>
+                <>
+                  <Button asChild size="lg">
+                    <Link href={`/messages?participantId=${profile.id}`}>Napisz wiadomosc</Link>
+                  </Button>
+                  <Button
+                    type="button"
+                    size="lg"
+                    variant="secondary"
+                    onClick={() => setShowReportModal(true)}
+                  >
+                    Zgłoś użytkownika
+                  </Button>
+                </>
               )}
               <Button asChild size="lg" variant="secondary">
                 <Link href="/dashboard">Dashboard</Link>
@@ -196,6 +210,15 @@ export function ProfileShell({ userId }: { userId: string }) {
         ) : null}
       </div>
     </div>
+    {showReportModal ? (
+      <ReportModal
+        targetType="USER"
+        targetId={profile.id}
+        label={`użytkownika ${profile.displayName ?? profile.username}`}
+        onClose={() => setShowReportModal(false)}
+      />
+    ) : null}
+    </>
   );
 }
 

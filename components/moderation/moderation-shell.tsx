@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -17,15 +17,33 @@ import {
   getApiErrorMessage,
   getCurrentUser,
   getModerationAccounts,
+  getModerationReports,
   updateModerationAccountStatus,
+  updateModerationReport,
   updateModerationUserRole,
 } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
 import { PresenceBadge } from "@/components/presence-badge";
-import type { AccountStatus, Role, User } from "@/lib/types";
+import type {
+  AccountStatus,
+  ModerationReport,
+  ModerationReportStatus,
+  ModerationReportTargetType,
+  Role,
+  User,
+} from "@/lib/types";
 
 const MODERATOR_ROLES: Role[] = ["GM", "ADMIN"];
 const ROLE_OPTIONS: Role[] = ["PLAYER", "GM", "ADMIN"];
+const REPORT_STATUS_OPTIONS: Array<{ value: ModerationReportStatus | ""; label: string }> = [
+  { value: "", label: "Wszystkie" },
+  { value: "OPEN", label: "Otwarte" },
+  { value: "IN_REVIEW", label: "W trakcie" },
+  { value: "RESOLVED", label: "Rozpatrzone" },
+  { value: "DISMISSED", label: "Odrzucone" },
+];
+
+type Tab = "accounts" | "reports";
 
 export function ModerationShell() {
   const router = useRouter();
@@ -33,6 +51,8 @@ export function ModerationShell() {
   const { accessToken, hydrated, user, setUser, clearSession } = useAuthStore(
     (state) => state,
   );
+  const [activeTab, setActiveTab] = useState<Tab>("accounts");
+  const [reportStatusFilter, setReportStatusFilter] = useState<ModerationReportStatus | "">("");
 
   const currentUserQuery = useQuery({
     queryKey: ["current-user"],
@@ -50,11 +70,19 @@ export function ModerationShell() {
     enabled: hydrated && Boolean(accessToken) && canModerate,
   });
 
+  const reportsQuery = useQuery({
+    queryKey: ["moderation-reports", reportStatusFilter],
+    queryFn: () =>
+      getModerationReports(
+        reportStatusFilter ? { status: reportStatusFilter } : undefined,
+      ),
+    enabled: hydrated && Boolean(accessToken) && canModerate && activeTab === "reports",
+  });
+
   useEffect(() => {
     if (!hydrated) {
       return;
     }
-
     if (!accessToken) {
       router.replace("/login");
     }
@@ -100,10 +128,25 @@ export function ModerationShell() {
     },
   });
 
+  const reportMutation = useMutation({
+    mutationFn: ({
+      id,
+      status,
+      resolution,
+    }: {
+      id: string;
+      status: ModerationReportStatus;
+      resolution?: string;
+    }) => updateModerationReport(id, { status, resolution }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["moderation-reports"] });
+    },
+  });
+
   if (
     !hydrated ||
     currentUserQuery.isLoading ||
-    (canModerate && accountsQuery.isLoading)
+    (canModerate && accountsQuery.isLoading && activeTab === "accounts")
   ) {
     return (
       <div className="min-h-screen px-4 py-10 lg:px-8">
@@ -122,6 +165,7 @@ export function ModerationShell() {
 
   const accounts = accountsQuery.data?.users ?? [];
   const pendingAccounts = accounts.filter((account) => account.status === "PENDING_APPROVAL");
+  const reports = reportsQuery.data?.reports ?? [];
 
   return (
     <div className="min-h-screen px-4 py-10 lg:px-8">
@@ -132,11 +176,10 @@ export function ModerationShell() {
               <Badge>Moderacja</Badge>
               <div>
                 <h1 className="font-display text-5xl text-[color:var(--foreground)]">
-                  Panel zatwierdzania kont
+                  Panel moderacji
                 </h1>
                 <p className="mt-3 max-w-3xl text-lg leading-8 text-[color:var(--foreground-muted)]">
-                  Tutaj zatwierdzisz nowe konta, zablokujesz dostep i jako administrator
-                  zarzadzisz rolami uzytkownikow.
+                  Zarządzaj kontami, rolami użytkowników oraz zgłoszeniami treści.
                 </p>
               </div>
             </div>
@@ -153,97 +196,268 @@ export function ModerationShell() {
             {getApiErrorMessage(currentUserQuery.error)}
           </p>
         ) : null}
-        {accountsQuery.isError ? (
-          <p className="text-sm text-[#9d3d2d]">
-            {getApiErrorMessage(accountsQuery.error)}
-          </p>
-        ) : null}
 
-        <section className="grid gap-6 lg:grid-cols-3">
-          <SummaryCard
-            label="Do zatwierdzenia"
-            value={String(pendingAccounts.length)}
-            description="Kont z poprawnie zweryfikowanym mailem i statusem oczekujacym."
-          />
-          <SummaryCard
-            label="Zablokowane"
-            value={String(accounts.filter((account) => account.status === "BLOCKED").length)}
-            description="Konta odciete od logowania do czasu odblokowania."
-          />
-          <SummaryCard
-            label="Moderator"
-            value={currentUser.role}
-            description="Twoje aktualne uprawnienia w panelu zatwierdzen."
-          />
-        </section>
+        <div className="flex gap-2 border-b border-[color:var(--border)]">
+          <button
+            type="button"
+            className={`px-4 py-2 text-sm font-medium transition-colors ${
+              activeTab === "accounts"
+                ? "border-b-2 border-[color:var(--foreground)] text-[color:var(--foreground)]"
+                : "text-[color:var(--foreground-muted)] hover:text-[color:var(--foreground)]"
+            }`}
+            onClick={() => setActiveTab("accounts")}
+          >
+            Konta
+          </button>
+          <button
+            type="button"
+            className={`px-4 py-2 text-sm font-medium transition-colors ${
+              activeTab === "reports"
+                ? "border-b-2 border-[color:var(--foreground)] text-[color:var(--foreground)]"
+                : "text-[color:var(--foreground-muted)] hover:text-[color:var(--foreground)]"
+            }`}
+            onClick={() => setActiveTab("reports")}
+          >
+            Zgłoszenia
+          </button>
+        </div>
 
-        <section className="space-y-4">
-          <div>
-            <h2 className="font-display text-3xl text-[color:var(--foreground)]">
-              Konta oczekujace
-            </h2>
-            <p className="mt-2 text-sm leading-7 text-[color:var(--foreground-muted)]">
-              Po weryfikacji e-mail nowe konto trafia tutaj i dopiero po zatwierdzeniu
-              moze zalogowac sie do gry.
-            </p>
-          </div>
-          {pendingAccounts.length > 0 ? (
-            <div className="grid gap-4">
-              {pendingAccounts.map((account) => (
-                <AccountCard
-                  account={account}
-                  canManageRoles={isAdmin}
-                  currentUserId={currentUser.id}
-                  onRoleChange={(role) =>
-                    roleMutation.mutate({ userId: account.id, role })
-                  }
-                  onStatusChange={(status) =>
-                    statusMutation.mutate({ userId: account.id, status })
-                  }
-                  rolePending={roleMutation.isPending}
-                  statusPending={statusMutation.isPending}
-                  key={account.id}
-                />
-              ))}
-            </div>
-          ) : (
-            <Card>
-              <CardContent className="py-10 text-sm leading-7 text-[color:var(--foreground-muted)]">
-                Brak kont oczekujacych na zatwierdzenie. Gdy nowy gracz potwierdzi
-                e-mail, pojawi sie tutaj.
-              </CardContent>
-            </Card>
-          )}
-        </section>
-
-        <section className="space-y-4">
-          <div>
-            <h2 className="font-display text-3xl text-[color:var(--foreground)]">
-              Wszystkie konta
-            </h2>
-            <p className="mt-2 text-sm leading-7 text-[color:var(--foreground-muted)]">
-              Pelna lista kont z mozliwoscia zmiany statusu oraz roli dla administratora.
-            </p>
-          </div>
-          <div className="grid gap-4">
-            {accounts.map((account) => (
-              <AccountCard
-                account={account}
-                canManageRoles={isAdmin}
-                currentUserId={currentUser.id}
-                onRoleChange={(role) => roleMutation.mutate({ userId: account.id, role })}
-                onStatusChange={(status) =>
-                  statusMutation.mutate({ userId: account.id, status })
-                }
-                rolePending={roleMutation.isPending}
-                statusPending={statusMutation.isPending}
-                key={account.id}
+        {activeTab === "accounts" ? (
+          <>
+            <section className="grid gap-6 lg:grid-cols-3">
+              <SummaryCard
+                label="Do zatwierdzenia"
+                value={String(pendingAccounts.length)}
+                description="Kont z poprawnie zweryfikowanym mailem i statusem oczekującym."
               />
-            ))}
-          </div>
-        </section>
+              <SummaryCard
+                label="Zablokowane"
+                value={String(accounts.filter((account) => account.status === "BLOCKED").length)}
+                description="Konta odcięte od logowania do czasu odblokowania."
+              />
+              <SummaryCard
+                label="Moderator"
+                value={currentUser.role}
+                description="Twoje aktualne uprawnienia w panelu zatwierdzeń."
+              />
+            </section>
+
+            <section className="space-y-4">
+              <div>
+                <h2 className="font-display text-3xl text-[color:var(--foreground)]">
+                  Konta oczekujące
+                </h2>
+                <p className="mt-2 text-sm leading-7 text-[color:var(--foreground-muted)]">
+                  Po weryfikacji e-mail nowe konto trafia tutaj i dopiero po zatwierdzeniu
+                  może zalogować się do gry.
+                </p>
+              </div>
+              {pendingAccounts.length > 0 ? (
+                <div className="grid gap-4">
+                  {pendingAccounts.map((account) => (
+                    <AccountCard
+                      account={account}
+                      canManageRoles={isAdmin}
+                      currentUserId={currentUser.id}
+                      onRoleChange={(role) =>
+                        roleMutation.mutate({ userId: account.id, role })
+                      }
+                      onStatusChange={(status) =>
+                        statusMutation.mutate({ userId: account.id, status })
+                      }
+                      rolePending={roleMutation.isPending}
+                      statusPending={statusMutation.isPending}
+                      key={account.id}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <Card>
+                  <CardContent className="py-10 text-sm leading-7 text-[color:var(--foreground-muted)]">
+                    Brak kont oczekujących na zatwierdzenie.
+                  </CardContent>
+                </Card>
+              )}
+            </section>
+
+            <section className="space-y-4">
+              <div>
+                <h2 className="font-display text-3xl text-[color:var(--foreground)]">
+                  Wszystkie konta
+                </h2>
+                <p className="mt-2 text-sm leading-7 text-[color:var(--foreground-muted)]">
+                  Pełna lista kont z możliwością zmiany statusu oraz roli dla administratora.
+                </p>
+              </div>
+              <div className="grid gap-4">
+                {accounts.map((account) => (
+                  <AccountCard
+                    account={account}
+                    canManageRoles={isAdmin}
+                    currentUserId={currentUser.id}
+                    onRoleChange={(role) =>
+                      roleMutation.mutate({ userId: account.id, role })
+                    }
+                    onStatusChange={(status) =>
+                      statusMutation.mutate({ userId: account.id, status })
+                    }
+                    rolePending={roleMutation.isPending}
+                    statusPending={statusMutation.isPending}
+                    key={account.id}
+                  />
+                ))}
+              </div>
+            </section>
+          </>
+        ) : (
+          <section className="space-y-4">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h2 className="font-display text-3xl text-[color:var(--foreground)]">
+                  Zgłoszenia treści
+                </h2>
+                <p className="mt-2 text-sm leading-7 text-[color:var(--foreground-muted)]">
+                  Lista zgłoszeń postów, wątków i użytkowników.
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {REPORT_STATUS_OPTIONS.map((opt) => (
+                  <Button
+                    key={opt.value}
+                    type="button"
+                    size="sm"
+                    variant={reportStatusFilter === opt.value ? "default" : "secondary"}
+                    onClick={() => setReportStatusFilter(opt.value as ModerationReportStatus | "")}
+                  >
+                    {opt.label}
+                  </Button>
+                ))}
+              </div>
+            </div>
+
+            {reportsQuery.isError ? (
+              <p className="text-sm text-[#9d3d2d]">
+                {getApiErrorMessage(reportsQuery.error)}
+              </p>
+            ) : null}
+
+            {reportsQuery.isLoading ? (
+              <div className="animate-pulse space-y-4">
+                <div className="h-28 rounded-[20px] bg-[color:var(--surface-strong)]" />
+                <div className="h-28 rounded-[20px] bg-[color:var(--surface-strong)]" />
+              </div>
+            ) : reports.length > 0 ? (
+              <div className="grid gap-4">
+                {reports.map((report) => (
+                  <ReportCard
+                    report={report}
+                    isPending={reportMutation.isPending}
+                    onStatusChange={(status, resolution) =>
+                      reportMutation.mutate({ id: report.id, status, resolution })
+                    }
+                    key={report.id}
+                  />
+                ))}
+              </div>
+            ) : (
+              <Card>
+                <CardContent className="py-10 text-sm leading-7 text-[color:var(--foreground-muted)]">
+                  Brak zgłoszeń dla wybranego filtra.
+                </CardContent>
+              </Card>
+            )}
+          </section>
+        )}
       </div>
     </div>
+  );
+}
+
+function ReportCard({
+  report,
+  isPending,
+  onStatusChange,
+}: {
+  report: ModerationReport;
+  isPending: boolean;
+  onStatusChange: (status: ModerationReportStatus, resolution?: string) => void;
+}) {
+  const [resolution, setResolution] = useState("");
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+          <div className="space-y-1">
+            <div className="flex flex-wrap gap-2">
+              <Badge>{formatReportStatus(report.status)}</Badge>
+              <Badge>{formatTargetType(report.targetType)}</Badge>
+            </div>
+            <CardTitle className="mt-2 text-xl">
+              Zgłoszenie od{" "}
+              <Link
+                href={`/profile/${report.reporterId}`}
+                className="underline underline-offset-2"
+              >
+                {report.reporter.displayName ?? report.reporter.username}
+              </Link>
+            </CardTitle>
+            <CardDescription>
+              {formatDate(report.createdAt)} · cel: <code className="text-xs">{report.targetId}</code>
+            </CardDescription>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <p className="text-sm leading-7 text-[color:var(--foreground-muted)]">
+          {report.reason}
+        </p>
+        {report.resolution ? (
+          <p className="rounded-lg bg-[color:var(--surface-strong)] px-4 py-3 text-sm">
+            <span className="font-medium">Decyzja:</span> {report.resolution}
+          </p>
+        ) : null}
+        {report.status === "OPEN" || report.status === "IN_REVIEW" ? (
+          <div className="space-y-3">
+            <textarea
+              className="w-full rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm placeholder:text-[color:var(--foreground-subtle)] focus:outline-none focus:ring-2 focus:ring-[color:var(--foreground)]"
+              placeholder="Opcjonalna decyzja / komentarz..."
+              value={resolution}
+              onChange={(e) => setResolution(e.target.value)}
+              rows={2}
+            />
+            <div className="flex flex-wrap gap-2">
+              <Button
+                type="button"
+                size="sm"
+                variant="secondary"
+                disabled={isPending}
+                onClick={() => onStatusChange("IN_REVIEW")}
+              >
+                W trakcie
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                disabled={isPending}
+                onClick={() => onStatusChange("RESOLVED", resolution || undefined)}
+              >
+                Rozpatrz
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="secondary"
+                disabled={isPending}
+                onClick={() => onStatusChange("DISMISSED", resolution || undefined)}
+              >
+                Odrzuć
+              </Button>
+            </div>
+          </div>
+        ) : null}
+      </CardContent>
+    </Card>
   );
 }
 
@@ -383,7 +597,31 @@ function formatStatus(status: AccountStatus) {
     case "BLOCKED":
       return "Zablokowane";
     default:
-      return "Oczekujace";
+      return "Oczekujące";
+  }
+}
+
+function formatReportStatus(status: ModerationReportStatus) {
+  switch (status) {
+    case "OPEN":
+      return "Otwarte";
+    case "IN_REVIEW":
+      return "W trakcie";
+    case "RESOLVED":
+      return "Rozpatrzone";
+    case "DISMISSED":
+      return "Odrzucone";
+  }
+}
+
+function formatTargetType(type: ModerationReportTargetType) {
+  switch (type) {
+    case "POST":
+      return "Post";
+    case "THREAD":
+      return "Wątek";
+    case "USER":
+      return "Użytkownik";
   }
 }
 

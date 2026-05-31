@@ -433,7 +433,56 @@ export type NotificationType =
   | "FORUM_POST_QUOTE"
   | "SKILL_PROPOSAL_CREATED"
   | "SKILL_PROPOSAL_APPROVED"
-  | "SKILL_PROPOSAL_REJECTED";
+  | "SKILL_PROPOSAL_REJECTED"
+  | "MODERATION_REPORT_RESOLVED";
+
+export type ModerationReportTargetType = "POST" | "THREAD" | "USER";
+export type ModerationReportStatus = "OPEN" | "IN_REVIEW" | "RESOLVED" | "DISMISSED";
+
+export interface ModerationReportAuthor {
+  id: string;
+  username: string;
+  displayName: string | null;
+}
+
+export interface ModerationReport {
+  id: string;
+  reporterId: string;
+  targetType: ModerationReportTargetType;
+  targetId: string;
+  reason: string;
+  status: ModerationReportStatus;
+  resolvedById: string | null;
+  resolution: string | null;
+  createdAt: string;
+  updatedAt: string;
+  reporter: ModerationReportAuthor;
+  resolvedBy: ModerationReportAuthor | null;
+}
+
+export interface ModerationReportsResponse {
+  reports: ModerationReport[];
+}
+
+export interface ModerationReportResponse {
+  report: ModerationReport;
+}
+
+export interface ModerationReportMutationResponse {
+  message: string;
+  report: ModerationReport;
+}
+
+export interface CreateModerationReportPayload {
+  targetType: ModerationReportTargetType;
+  targetId: string;
+  reason: string;
+}
+
+export interface UpdateModerationReportPayload {
+  status: ModerationReportStatus;
+  resolution?: string;
+}
 
 export interface Notification {
   id: string;

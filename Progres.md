@@ -143,6 +143,18 @@
 - Zweryfikowano integracje WorldLog: endpoint `GET/POST /worlds/:worldId/world-log`, widok `/worlds/[worldId]` z pelna lista wpisow, formularzem dla GM/Admin i poprawnym routingiem.
 - Zweryfikowano iteracje poleceniami: `npm.cmd --prefix server run build`, `npm.cmd --prefix server run test`, `npm.cmd run lint`, `npm.cmd run build:web`.
 
+## 2026-05-31 - System zgłaszania treści (ModerationReport) - DONE
+
+- Dodano modele `ModerationReportTargetType` (POST | THREAD | USER), `ModerationReportStatus` (OPEN | IN_REVIEW | RESOLVED | DISMISSED) oraz `ModerationReport` do `schema.prisma` wraz z migracją `202604_moderation_report`.
+- Rozszerzono enum `NotificationType` o wartość `MODERATION_REPORT_RESOLVED` — powiadomienie in-app wysyłane do zgłaszającego po ustawieniu statusu `RESOLVED`.
+- Zaimplementowano backendowy moduł `moderation` w NestJS z czterema endpointami: `POST /moderation/reports` (wymaga JWT), `GET /moderation/reports` z filtrem `status` i `targetType` (tylko GM/ADMIN), `GET /moderation/reports/:id` (GM/ADMIN) oraz `PATCH /moderation/reports/:id` (GM/ADMIN).
+- Kontroler używa `JwtAuthGuard` na poziomie klasy oraz `RolesGuard + @Roles("GM", "ADMIN")` na chronionych metodach; po zmianie statusu na `RESOLVED` `ModerationService` wywołuje `NotificationsService.createForUsers`.
+- Dodano testy backendowe (`moderation.service.spec.ts`) potwierdzające: gracz może zgłosić post, GM widzi listę zgłoszeń, GM może zmienić status na RESOLVED i wysłane zostaje powiadomienie, RolesGuard odrzuca żądanie bez roli GM/ADMIN.
+- Na frontendzie panel moderacji (`/moderation`) dostał zakładkę "Zgłoszenia" z listą `ModerationReport`, filtrem statusu i przyciskami zmiany statusu (IN_REVIEW, RESOLVED, DISMISSED) z opcjonalnym polem decyzji.
+- Dodano komponent `ReportModal` z polem `reason` (min. 10 znaków); modal pojawia się przy każdym poście i wątku forum (przycisk "Zgłoś" / "Zgłoś wątek") oraz na profilu innego użytkownika (przycisk "Zgłoś użytkownika").
+- Zaktualizowano `lib/types.ts` o typy `ModerationReport`, `ModerationReportStatus`, `ModerationReportTargetType` oraz payloady; `lib/api.ts` dostał funkcje `createModerationReport`, `getModerationReports`, `getModerationReport`, `updateModerationReport`.
+- Zweryfikowano iterację poleceniami: `npm --prefix server run prisma:generate`, `npm --prefix server run test` (49/49), `npm --prefix server run build`, `npm run lint`, `npm run build:web`.
+
 ## 2026-05-10 - ETAP 3 - WorldLog MVP - IN PROGRESS
 
 - Dodano model `WorldLog` wraz z migracja Prisma oraz relacjami do `World` i autora wpisu `User`.

@@ -5,6 +5,13 @@ import { useAuthStore } from "./auth-store";
 import type {
   AccountStatus,
   AddProgressPayload,
+  CreateModerationReportPayload,
+  ModerationReportMutationResponse,
+  ModerationReportResponse,
+  ModerationReportsResponse,
+  ModerationReportStatus,
+  ModerationReportTargetType,
+  UpdateModerationReportPayload,
   AuthResponse,
   CharacterPayload,
   CharacterRankingsResponse,
@@ -484,6 +491,40 @@ export async function updateModerationUserRole(userId: string, role: Role) {
   const payload: UpdateUserRolePayload = { role };
   const { data } = await api.patch<ModerationAccountMutationResponse>(
     `/users/moderation/accounts/${userId}/role`,
+    payload,
+  );
+  return data;
+}
+
+export async function createModerationReport(payload: CreateModerationReportPayload) {
+  const { data } = await api.post<ModerationReportMutationResponse>(
+    "/moderation/reports",
+    payload,
+  );
+  return data;
+}
+
+export async function getModerationReports(filters?: {
+  status?: ModerationReportStatus;
+  targetType?: ModerationReportTargetType;
+}) {
+  const { data } = await api.get<ModerationReportsResponse>("/moderation/reports", {
+    params: filters,
+  });
+  return data;
+}
+
+export async function getModerationReport(id: string) {
+  const { data } = await api.get<ModerationReportResponse>(`/moderation/reports/${id}`);
+  return data;
+}
+
+export async function updateModerationReport(
+  id: string,
+  payload: UpdateModerationReportPayload,
+) {
+  const { data } = await api.patch<ModerationReportMutationResponse>(
+    `/moderation/reports/${id}`,
     payload,
   );
   return data;

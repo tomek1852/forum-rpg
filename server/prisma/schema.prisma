@@ -26,6 +26,20 @@ enum NotificationType {
   SKILL_PROPOSAL_CREATED
   SKILL_PROPOSAL_APPROVED
   SKILL_PROPOSAL_REJECTED
+  MODERATION_REPORT_RESOLVED
+}
+
+enum ModerationReportTargetType {
+  POST
+  THREAD
+  USER
+}
+
+enum ModerationReportStatus {
+  OPEN
+  IN_REVIEW
+  RESOLVED
+  DISMISSED
 }
 
 enum StatValueType {
@@ -84,6 +98,8 @@ model User {
   createdEvents       Event[]              @relation("EventCreator")
   reviewedEventParticipations EventParticipation[] @relation("EventParticipationReviewer")
   createdWorldLogs    WorldLog[]           @relation("WorldLogAuthor")
+  reportsFiled        ModerationReport[]   @relation("ModerationReportReporter")
+  reportsResolved     ModerationReport[]   @relation("ModerationReportResolver")
 }
 
 model World {
@@ -428,4 +444,23 @@ model PrivateMessage {
   @@index([conversationId, createdAt])
   @@index([conversationId, readAt])
   @@index([senderId, createdAt])
+}
+
+model ModerationReport {
+  id           String                     @id @default(uuid())
+  reporterId   String
+  targetType   ModerationReportTargetType
+  targetId     String
+  reason       String
+  status       ModerationReportStatus     @default(OPEN)
+  resolvedById String?
+  resolution   String?
+  createdAt    DateTime                   @default(now())
+  updatedAt    DateTime                   @updatedAt
+  reporter     User                       @relation("ModerationReportReporter", fields: [reporterId], references: [id], onDelete: Cascade)
+  resolvedBy   User?                      @relation("ModerationReportResolver", fields: [resolvedById], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+  @@index([reporterId, createdAt])
+  @@index([targetType, targetId])
 }

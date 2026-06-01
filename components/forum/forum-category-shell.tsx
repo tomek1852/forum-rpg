@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/card";
 import { getApiErrorMessage, getForumCategory } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
+import axios from "axios";
 
 export function ForumCategoryShell({ categoryId }: { categoryId: string }) {
   const router = useRouter();
@@ -30,7 +31,19 @@ export function ForumCategoryShell({ categoryId }: { categoryId: string }) {
     queryKey: ["forum", "category", categoryId],
     queryFn: () => getForumCategory(categoryId),
     enabled: hydrated && Boolean(accessToken),
+    retry: (failureCount, error) => {
+      if (axios.isAxiosError(error) && (error.response?.status === 403 || error.response?.status === 404)) {
+        return false;
+      }
+      return failureCount < 3;
+    },
   });
+
+  useEffect(() => {
+    if (query.isError && axios.isAxiosError(query.error) && query.error.response?.status === 403) {
+      router.replace("/forum?error=access_denied");
+    }
+  }, [query.isError, query.error, router]);
 
   if (!hydrated || (accessToken && query.isLoading)) {
     return (

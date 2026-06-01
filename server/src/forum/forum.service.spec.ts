@@ -22,6 +22,7 @@ describe("ForumService", () => {
       findUnique: jest.fn(),
       findMany: jest.fn(),
       create: jest.fn(),
+      update: jest.fn(),
     },
     forumThread: {
       findUnique: jest.fn(),
@@ -47,6 +48,7 @@ describe("ForumService", () => {
       id: "category-1",
       title: "Tawerna",
       isArchived: false,
+      allowedRoles: [],
     });
     prisma.user.findMany.mockResolvedValueOnce([]);
     prisma.$transaction.mockImplementationOnce(
@@ -77,7 +79,7 @@ describe("ForumService", () => {
       },
     );
 
-    const result = await service.createThread("user-1", {
+    const result = await service.createThread("user-1", "PLAYER", {
       categoryId: "category-1",
       title: "Nowy watek",
       content: "Pierwsza wiadomosc.",
@@ -177,5 +179,105 @@ describe("ForumService", () => {
       expect.objectContaining({ userId: "user-2" }),
       expect.objectContaining({ userId: "user-3" }),
     ]);
+  });
+
+  // --- category permission tests ---
+
+  it("PLAYER does not see a category restricted to GM only", async () => {
+    prisma.forumCategory.findMany.mockResolvedValueOnce([]);
+
+    const result = await service.listCategories("PLAYER");
+
+    expect(prisma.forumCategory.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ isArchived: false }),
+      }),
+    );
+    expect(result.categories).toHaveLength(0);
+  });
+
+  it("GM sees all categories including archived", async () => {
+    const mockCategories = [
+      {
+        id: "cat-1",
+        title: "Publiczna",
+        description: null,
+        color: null,
+        position: 0,
+        sortOrder: 0,
+        allowedRoles: [],
+        isArchived: false,
+        createdById: null,
+        threads: [],
+        _count: { threads: 0 },
+      },
+      {
+        id: "cat-2",
+        title: "Archiwum",
+        description: null,
+        color: null,
+        position: 1,
+        sortOrder: 1,
+        allowedRoles: [],
+        isArchived: true,
+        createdById: null,
+        threads: [],
+        _count: { threads: 0 },
+      },
+    ];
+    prisma.forumCategory.findMany.mockResolvedValueOnce(mockCategories);
+
+    const result = await service.listCategories("GM");
+
+    expect(prisma.forumCategory.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: {} }),
+    );
+    expect(result.categories).toHaveLength(2);
+    expect(result.categories.some((c) => c.isArchived)).toBe(true);
+  });
+
+  it("PLAYER cannot create a thread in a GM-only category", async () => {
+    prisma.forumCategory.findUnique.mockResolvedValueOnce({
+      id: "cat-gm",
+      title: "Tylko GM",
+      isArchived: false,
+      allowedRoles: ["GM"],
+    });
+
+    await expect(
+      service.createThread("user-player", "PLAYER", {
+        categoryId: "cat-gm",
+        title: "Temat",
+        content: "Treść",
+      }),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+  });
+
+  it("updateCategory changes sortOrder correctly", async () => {
+    prisma.forumCategory.findUnique.mockResolvedValueOnce({
+      id: "cat-1",
+      title: "Tawerna",
+      isArchived: false,
+    });
+    prisma.forumCategory.update.mockResolvedValueOnce({
+      id: "cat-1",
+      title: "Tawerna",
+      description: null,
+      color: null,
+      position: 0,
+      sortOrder: 5,
+      allowedRoles: [],
+      isArchived: false,
+      createdById: null,
+    });
+
+    const result = await service.updateCategory("cat-1", { sortOrder: 5 });
+
+    expect(prisma.forumCategory.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ sortOrder: 5 }),
+      }),
+    );
+    expect(result.category.sortOrder).toBe(5);
   });
 });

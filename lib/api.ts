@@ -6,6 +6,10 @@ import type {
   AccountStatus,
   ActivityLogQueryParams,
   ActivityLogResponse,
+  AdminStatsResponse,
+  AdminUserActivityResponse,
+  AdminUsersParams,
+  AdminUsersResponse,
   AddProgressPayload,
   CreateModerationReportPayload,
   ModerationReportMutationResponse,
@@ -32,11 +36,14 @@ import type {
   EventResponse,
   EventsResponse,
   ForumCategoriesResponse,
+  ForumCategoryMutationResponse,
+  ForumCategoryPayload,
   ForumCategoryResponse,
   ForumPostResponse,
   ForumReplyPayload,
   ForumThreadPayload,
   ForumThreadResponse,
+  UpdateForumCategoryPayload,
   LoginPayload,
   ModerationAccountMutationResponse,
   ModerationAccountsResponse,
@@ -386,6 +393,26 @@ export async function getForumCategories() {
   return data;
 }
 
+export async function createForumCategory(payload: ForumCategoryPayload) {
+  const { data } = await api.post<ForumCategoryMutationResponse>("/forum/categories", payload);
+  return data;
+}
+
+export async function updateForumCategory(categoryId: string, payload: UpdateForumCategoryPayload) {
+  const { data } = await api.patch<ForumCategoryMutationResponse>(
+    `/forum/categories/${categoryId}`,
+    payload,
+  );
+  return data;
+}
+
+export async function deleteForumCategory(categoryId: string) {
+  const { data } = await api.delete<ForumCategoryMutationResponse>(
+    `/forum/categories/${categoryId}`,
+  );
+  return data;
+}
+
 export async function getForumCategory(categoryId: string) {
   const { data } = await api.get<ForumCategoryResponse>(
     `/forum/categories/${categoryId}`,
@@ -536,6 +563,39 @@ export async function getActivityLog(params?: ActivityLogQueryParams) {
   const { data } = await api.get<ActivityLogResponse>("/admin/activity-log", {
     params,
   });
+  return data;
+}
+
+export async function getAdminUsers(params?: AdminUsersParams) {
+  const { data } = await api.get<AdminUsersResponse>("/admin/users", { params });
+  return data;
+}
+
+export async function getAdminUserActivity(userId: string) {
+  const { data } = await api.get<AdminUserActivityResponse>(
+    `/admin/users/${userId}/activity`,
+  );
+  return data;
+}
+
+export async function updateAdminUserStatus(userId: string, status: AccountStatus) {
+  const { data } = await api.patch<ModerationAccountMutationResponse>(
+    `/admin/users/${userId}/status`,
+    { status },
+  );
+  return data;
+}
+
+export async function updateAdminUserRole(userId: string, role: Role) {
+  const { data } = await api.patch<ModerationAccountMutationResponse>(
+    `/admin/users/${userId}/role`,
+    { role },
+  );
+  return data;
+}
+
+export async function getAdminStats() {
+  const { data } = await api.get<AdminStatsResponse>("/admin/stats");
   return data;
 }
 

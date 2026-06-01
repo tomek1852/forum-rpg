@@ -1,5 +1,6 @@
 import {
   IsArray,
+  IsBoolean,
   IsEnum,
   IsInt,
   IsOptional,
@@ -15,10 +16,11 @@ enum UserRoleEnum {
   ADMIN = "ADMIN",
 }
 
-export class CreateCategoryDto {
+export class UpdateCategoryDto {
+  @IsOptional()
   @IsString()
   @MaxLength(80)
-  title!: string;
+  title?: string;
 
   @IsOptional()
   @IsString()
@@ -35,15 +37,14 @@ export class CreateCategoryDto {
   @IsOptional()
   @IsInt()
   @Min(0)
-  position?: number;
-
-  @IsOptional()
-  @IsInt()
-  @Min(0)
   sortOrder?: number;
 
   @IsOptional()
   @IsArray()
   @IsEnum(UserRoleEnum, { each: true })
   allowedRoles?: string[];
+
+  @IsOptional()
+  @IsBoolean()
+  isArchived?: boolean;
 }

@@ -169,6 +169,41 @@
 - Naprawiono `jest.config.mjs` — dodano `<rootDir>/.claude/` do `testPathIgnorePatterns` (worktree z poprzedniej sesji powodował fałszywe błędy w `test:web`).
 - Zweryfikowano iterację poleceniami: `npm --prefix server run prisma:generate --no-engine`, `npm --prefix server run test` (54/54), `npm --prefix server run build`, `npm run lint`, `npm run test:web` (4/4), `npm run build:web`.
 
+## 2026-06-01 - Panel administracyjny (rozbudowa) - DONE
+
+- Dodano backendowy moduł `admin` w NestJS: serwis `AdminService` z metodami `listUsers`, `getUserActivity`, `getStats` oraz kontroler `AdminController` ze wszystkimi endpointami pod `/admin`.
+- Endpoint `GET /admin/users` obsługuje parametry `search` (username/email, insensitive), `role`, `status`, `sortBy` (createdAt | lastLogin | username), `page`, `limit` (offset-based pagination) i zwraca `{ users, total, page, limit }`.
+- Endpoint `GET /admin/users/:userId/activity` zwraca ostatnie 20 wpisów z `ActivityLog` dla danego użytkownika (deleguje do `ActivityLogService`).
+- Endpointy `PATCH /admin/users/:userId/status` i `PATCH /admin/users/:userId/role` delegują do istniejącego `UsersService.updateAccountStatus` i `UsersService.updateUserRole`, które już zapisują wpis ActivityLog.
+- Endpoint `GET /admin/stats` zwraca agregaty: użytkownicy wg statusu i roli, zgłoszenia wg statusu, liczba postaci, liczba konwersacji (przez `prisma.*.groupBy` i `prisma.*.count`).
+- Wszystkie endpointy `/admin/*` są zabezpieczone `JwtAuthGuard + RolesGuard + @Roles("ADMIN")` na poziomie klasy.
+- Dodano testy backendowe w `admin.service.spec.ts` (5 testów): wyszukiwanie po username, filtr PENDING_APPROVAL, poprawne agregaty w getStats, paginacja, RolesGuard blokuje GM na `/admin/users`.
+- Na frontendzie dodano widok `/admin` z komponentem `AdminShell` (3 zakładki: Użytkownicy, Statystyki, Log aktywności) oraz widok `/admin/users/[userId]` z kartą użytkownika, listą postaci, skróconym ActivityLog i listą zgłoszeń.
+- Tabela użytkowników w zakładce Użytkownicy ma wyszukiwarkę, filtry statusu/roli, sortowanie, paginację oraz akcje zmiany statusu i roli inline.
+- Zakładka Statystyki wyświetla karty z agregatami z endpointu `/admin/stats`.
+- Zakładka Log aktywności reużywa istniejącej logiki z panelu moderacji (filtr akcji, paginacja cursor-based).
+- Dostęp do `/admin` jest chroniony redirect do `/moderation` dla ról innych niż ADMIN.
+- Dodano typy `AdminUsersParams`, `AdminUsersResponse`, `AdminStatsResponse`, `AdminUserActivityResponse` do `lib/types.ts` oraz funkcje `getAdminUsers`, `getAdminUserActivity`, `updateAdminUserStatus`, `updateAdminUserRole`, `getAdminStats` do `lib/api.ts`.
+- Zweryfikowano poleceniami: `npm --prefix server run test` (59/59), `npm --prefix server run build`, `npm run lint`, `npm run test:web` (4/4), `npm run build:web`.
+
+## 2026-06-01 - ETAP 4 — Zarządzanie kategoriami forum z uprawnieniami - DONE
+
+- Rozszerzono model `ForumCategory` w schema.prisma o pola: `allowedRoles` (String[], domyślnie []), `sortOrder` (Int, domyślnie 0), `createdById` (FK User) oraz relację do `User`.
+- Dodano ręczną migrację SQL `202604_forum_category_perms` z ALTER TABLE dla nowych pól i FK.
+- Uruchomiono `prisma generate --no-engine`, aby zaktualizować typy Prisma Client.
+- Zaktualizowano DTOs: `create-category.dto.ts` o pola `allowedRoles` i `sortOrder`; dodano nowe `update-category.dto.ts` z opcjonalnymi polami `title`, `description`, `color`, `sortOrder`, `allowedRoles`, `isArchived`.
+- Przebudowano `ForumService`: `listCategories(userRole)` filtruje kategorie wg roli (PLAYER widzi tylko dostępne i niearchiwizowane; GM/ADMIN widzi wszystkie), `getCategory` rzuca `ForbiddenException` przy braku dostępu, `createCategory` zapisuje `createdById`, `allowedRoles`, `sortOrder`; dodano `updateCategory` i `archiveCategory` (soft-delete); `createThread` waliduje dostęp gracza do kategorii.
+- Zaktualizowano `ForumController`: `listCategories` i `getCategory` przekazują `user.role` do serwisu; dodano endpointy `PATCH /forum/categories/:id` i `DELETE /forum/categories/:id` z `RolesGuard(GM, ADMIN)`.
+- Dodano 4 nowe testy backendowe w `forum.service.spec.ts`: PLAYER nie widzi kategorii ograniczonej do GM, GM widzi wszystkie kategorie włącznie z zarchiwizowanymi, PLAYER nie może założyć wątku w kategorii tylko dla GM, `updateCategory` poprawnie zmienia `sortOrder`.
+- Zaktualizowano `lib/types.ts` o nowe pola `ForumCategory` (`sortOrder`, `allowedRoles`, `isArchived`, `createdById`) oraz dodano typy `ForumCategoryPayload`, `UpdateForumCategoryPayload`, `ForumCategoryMutationResponse`.
+- Dodano w `lib/api.ts` funkcje `createForumCategory`, `updateForumCategory`, `deleteForumCategory`.
+- Stworzono komponent `ForumCategoriesManager` w `components/forum/forum-categories-manager.tsx`: lista kategorii z oznaczeniem archiwum i reguł dostępu, strzałki góra/dół do zmiany kolejności (`sortOrder`), modal tworzenia/edycji z polem `allowedRoles` (multi-select) i `isArchived`, przycisk archiwizacji.
+- Dodano `ForumCategoriesManager` jako nową sekcję w `WorldManagementShell` (panel `/mg`).
+- Zaktualizowano `ForumHomeShell`: zarchiwizowane kategorie mają wizualne wyszarzenie i etykietę "Archiwum" widoczną tylko dla GM/Admin; obsługuje parametr `?error=access_denied` z redirectu.
+- Zaktualizowano `ForumCategoryShell`: przy błędzie 403 wykonuje redirect do `/forum?error=access_denied` z komunikatem o braku dostępu.
+- Strona `/forum` opakowana w `<Suspense>` ze względu na `useSearchParams()`.
+- Zweryfikowano poleceniami: `npm --prefix server run test` (63/63), `npm --prefix server run build`, `npm run lint`, `npm run test:web` (4/4), `npm run build:web`.
+
 ## 2026-05-10 - ETAP 3 - WorldLog MVP - IN PROGRESS
 
 - Dodano model `WorldLog` wraz z migracja Prisma oraz relacjami do `World` i autora wpisu `User`.

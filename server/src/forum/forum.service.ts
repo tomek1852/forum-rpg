@@ -8,6 +8,7 @@ import { NotificationType } from "@prisma/client";
 import { NotificationsService } from "../notifications/notifications.service";
 import { PrismaService } from "../prisma/prisma.service";
 import { CreateCategoryDto } from "./dto/create-category.dto";
+import { UpdateCategoryDto } from "./dto/update-category.dto";
 import { CreatePostDto } from "./dto/create-post.dto";
 import { CreateThreadDto } from "./dto/create-thread.dto";
 
@@ -19,6 +20,15 @@ const userSummarySelect = {
   role: true,
 } as const;
 
+const MODERATOR_ROLES = ["GM", "ADMIN"];
+
+function canAccessCategory(category: { allowedRoles: string[]; isArchived: boolean }, userRole: string): boolean {
+  if (MODERATOR_ROLES.includes(userRole)) return true;
+  if (category.isArchived) return false;
+  if (category.allowedRoles.length === 0) return true;
+  return category.allowedRoles.includes(userRole);
+}
+
 @Injectable()
 export class ForumService {
   constructor(
@@ -27,10 +37,22 @@ export class ForumService {
     private readonly notificationsService: NotificationsService,
   ) {}
 
-  async listCategories() {
+  async listCategories(userRole: string) {
+    const isModerator = MODERATOR_ROLES.includes(userRole);
+
+    const where = isModerator
+      ? {}
+      : {
+          isArchived: false,
+          OR: [
+            { allowedRoles: { isEmpty: true } },
+            { allowedRoles: { has: userRole } },
+          ],
+        };
+
     const categories = await this.prisma.forumCategory.findMany({
-      where: { isArchived: false },
-      orderBy: [{ position: "asc" }, { title: "asc" }],
+      where,
+      orderBy: [{ sortOrder: "asc" }, { position: "asc" }, { title: "asc" }],
       include: {
         _count: {
           select: {
@@ -61,6 +83,10 @@ export class ForumService {
         description: category.description,
         color: category.color,
         position: category.position,
+        sortOrder: category.sortOrder,
+        allowedRoles: category.allowedRoles,
+        isArchived: category.isArchived,
+        createdById: category.createdById,
         threadCount: category._count.threads,
         latestThread: category.threads[0]
           ? {
@@ -76,7 +102,7 @@ export class ForumService {
     };
   }
 
-  async getCategory(categoryId: string) {
+  async getCategory(categoryId: string, userRole: string) {
     const category = await this.prisma.forumCategory.findUnique({
       where: { id: categoryId },
       include: {
@@ -108,8 +134,12 @@ export class ForumService {
       },
     });
 
-    if (!category || category.isArchived) {
+    if (!category) {
       throw new NotFoundException("Nie znaleziono kategorii forum.");
+    }
+
+    if (!canAccessCategory(category, userRole)) {
+      throw new ForbiddenException("Nie masz dostępu do tej kategorii forum.");
     }
 
     return {
@@ -119,6 +149,9 @@ export class ForumService {
         description: category.description,
         color: category.color,
         position: category.position,
+        sortOrder: category.sortOrder,
+        allowedRoles: category.allowedRoles,
+        isArchived: category.isArchived,
         threadCount: category._count.threads,
       },
       threads: category.threads.map((thread) => ({
@@ -210,26 +243,74 @@ export class ForumService {
     };
   }
 
-  async createCategory(dto: CreateCategoryDto) {
+  async createCategory(dto: CreateCategoryDto, createdById: string) {
     const category = await this.prisma.forumCategory.create({
       data: {
         title: dto.title.trim(),
         description: dto.description?.trim() || null,
         color: dto.color?.trim() || null,
         position: dto.position ?? 0,
+        sortOrder: dto.sortOrder ?? 0,
+        allowedRoles: dto.allowedRoles ?? [],
+        createdById,
       },
     });
 
-    return { category };
+    return { category: this.mapCategory(category) };
   }
 
-  async createThread(authorId: string, dto: CreateThreadDto) {
+  async updateCategory(categoryId: string, dto: UpdateCategoryDto) {
+    const existing = await this.prisma.forumCategory.findUnique({
+      where: { id: categoryId },
+    });
+
+    if (!existing) {
+      throw new NotFoundException("Nie znaleziono kategorii forum.");
+    }
+
+    const category = await this.prisma.forumCategory.update({
+      where: { id: categoryId },
+      data: {
+        ...(dto.title !== undefined ? { title: dto.title.trim() } : {}),
+        ...(dto.description !== undefined ? { description: dto.description?.trim() || null } : {}),
+        ...(dto.color !== undefined ? { color: dto.color?.trim() || null } : {}),
+        ...(dto.sortOrder !== undefined ? { sortOrder: dto.sortOrder } : {}),
+        ...(dto.allowedRoles !== undefined ? { allowedRoles: dto.allowedRoles } : {}),
+        ...(dto.isArchived !== undefined ? { isArchived: dto.isArchived } : {}),
+      },
+    });
+
+    return { category: this.mapCategory(category) };
+  }
+
+  async archiveCategory(categoryId: string) {
+    const existing = await this.prisma.forumCategory.findUnique({
+      where: { id: categoryId },
+    });
+
+    if (!existing) {
+      throw new NotFoundException("Nie znaleziono kategorii forum.");
+    }
+
+    const category = await this.prisma.forumCategory.update({
+      where: { id: categoryId },
+      data: { isArchived: true },
+    });
+
+    return { category: this.mapCategory(category) };
+  }
+
+  async createThread(authorId: string, userRole: string, dto: CreateThreadDto) {
     const category = await this.prisma.forumCategory.findUnique({
       where: { id: dto.categoryId },
     });
 
     if (!category || category.isArchived) {
       throw new NotFoundException("Nie mozna dodac watku do tej kategorii.");
+    }
+
+    if (!canAccessCategory(category, userRole)) {
+      throw new ForbiddenException("Nie masz dostepu do tej kategorii forum.");
     }
 
     const now = new Date();
@@ -447,6 +528,30 @@ export class ForumService {
             }
           : null,
       },
+    };
+  }
+
+  private mapCategory(category: {
+    id: string;
+    title: string;
+    description: string | null;
+    color: string | null;
+    position: number;
+    sortOrder: number;
+    allowedRoles: string[];
+    isArchived: boolean;
+    createdById: string | null;
+  }) {
+    return {
+      id: category.id,
+      title: category.title,
+      description: category.description,
+      color: category.color,
+      position: category.position,
+      sortOrder: category.sortOrder,
+      allowedRoles: category.allowedRoles,
+      isArchived: category.isArchived,
+      createdById: category.createdById,
     };
   }
 

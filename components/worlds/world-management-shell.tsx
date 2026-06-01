@@ -25,6 +25,7 @@ import {
 import { useAuthStore } from "@/lib/auth-store";
 import type { Role, SkillProposal, SkillProposalStatus } from "@/lib/types";
 import { statDefinitionSchema, worldSchema } from "@/lib/validators";
+import { ForumCategoriesManager } from "@/components/forum/forum-categories-manager";
 
 const MANAGER_ROLES: Role[] = ["GM", "ADMIN"];
 
@@ -506,6 +507,8 @@ export function WorldManagementShell() {
             </Card>
           )}
         </section>
+
+        <ForumCategoriesManager />
       </div>
     </div>
   );

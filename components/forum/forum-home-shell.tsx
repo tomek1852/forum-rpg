@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -15,10 +15,16 @@ import {
 } from "@/components/ui/card";
 import { getApiErrorMessage, getForumCategories } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
+import type { Role } from "@/lib/types";
+
+const MODERATOR_ROLES: Role[] = ["GM", "ADMIN"];
 
 export function ForumHomeShell() {
   const router = useRouter();
-  const { accessToken, hydrated } = useAuthStore((state) => state);
+  const searchParams = useSearchParams();
+  const { accessToken, hydrated, user } = useAuthStore((state) => state);
+  const isModerator = Boolean(user && MODERATOR_ROLES.includes(user.role));
+  const accessDenied = searchParams.get("error") === "access_denied";
 
   useEffect(() => {
     if (hydrated && !accessToken) {
@@ -78,6 +84,11 @@ export function ForumHomeShell() {
             </div>
           </div>
         </header>
+        {accessDenied ? (
+          <p className="text-sm text-[#9d3d2d]">
+            Nie masz dostępu do tej kategorii forum.
+          </p>
+        ) : null}
         {query.isError ? (
           <p className="text-sm text-[#9d3d2d]">
             {getApiErrorMessage(query.error)}
@@ -85,14 +96,24 @@ export function ForumHomeShell() {
         ) : null}
         <section className="grid gap-6 lg:grid-cols-3">
           {query.data?.categories.map((category) => (
-            <Card className="overflow-hidden" key={category.id}>
+            <Card
+              className={`overflow-hidden${category.isArchived ? " opacity-70" : ""}`}
+              key={category.id}
+            >
               <div
                 className="h-2 w-full"
-                style={{ backgroundColor: category.color ?? "#9d3d2d" }}
+                style={{ backgroundColor: category.isArchived ? "#888" : (category.color ?? "#9d3d2d") }}
               />
               <CardHeader>
-                <CardDescription>{category.threadCount} wątków</CardDescription>
-                <CardTitle>{category.title}</CardTitle>
+                <div className="flex flex-wrap items-center gap-2">
+                  <CardDescription>{category.threadCount} wątków</CardDescription>
+                  {category.isArchived && isModerator ? (
+                    <Badge className="opacity-70">Archiwum</Badge>
+                  ) : null}
+                </div>
+                <CardTitle className={category.isArchived ? "text-[color:var(--foreground-muted)]" : undefined}>
+                  {category.title}
+                </CardTitle>
               </CardHeader>
               <CardContent className="space-y-5">
                 <p className="text-sm leading-7 text-[color:var(--foreground-muted)]">

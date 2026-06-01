@@ -355,6 +355,10 @@ export interface ForumCategory {
   description: string | null;
   color: string | null;
   position: number;
+  sortOrder: number;
+  allowedRoles: Role[];
+  isArchived: boolean;
+  createdById: string | null;
   threadCount: number;
   latestThread: {
     id: string;
@@ -364,6 +368,27 @@ export interface ForumCategory {
     postCount: number;
     author: ForumAuthor;
   } | null;
+}
+
+export interface ForumCategoryPayload {
+  title: string;
+  description?: string;
+  color?: string;
+  sortOrder?: number;
+  allowedRoles?: Role[];
+}
+
+export interface UpdateForumCategoryPayload {
+  title?: string;
+  description?: string;
+  color?: string;
+  sortOrder?: number;
+  allowedRoles?: Role[];
+  isArchived?: boolean;
+}
+
+export interface ForumCategoryMutationResponse {
+  category: Omit<ForumCategory, "threadCount" | "latestThread">;
 }
 
 export interface ForumThreadSummary {
@@ -738,4 +763,32 @@ export interface ActivityLogQueryParams {
   targetType?: string;
   from?: string;
   to?: string;
+}
+
+export interface AdminUsersParams {
+  search?: string;
+  role?: Role;
+  status?: AccountStatus;
+  sortBy?: "createdAt" | "lastLogin" | "username";
+  page?: number;
+  limit?: number;
+}
+
+export interface AdminUsersResponse {
+  users: User[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+export interface AdminStatsResponse {
+  usersByStatus: Partial<Record<AccountStatus, number>>;
+  usersByRole: Partial<Record<Role, number>>;
+  reportsByStatus: Partial<Record<ModerationReportStatus, number>>;
+  characterCount: number;
+  activeConversationCount: number;
+}
+
+export interface AdminUserActivityResponse {
+  entries: ActivityLogEntry[];
 }

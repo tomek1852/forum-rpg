@@ -101,6 +101,7 @@ model User {
   reportsFiled        ModerationReport[]   @relation("ModerationReportReporter")
   reportsResolved     ModerationReport[]   @relation("ModerationReportResolver")
   activityLogs        ActivityLog[]        @relation("ActivityLogActor")
+  createdForumCategories ForumCategory[]   @relation("ForumCategoryCreator")
 }
 
 model World {
@@ -353,15 +354,19 @@ model CharacterStatValue {
 }
 
 model ForumCategory {
-  id          String       @id @default(uuid())
-  title       String
-  description String?
-  color       String?
-  position    Int          @default(0)
-  isArchived  Boolean      @default(false)
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  threads     ForumThread[]
+  id           String        @id @default(uuid())
+  title        String
+  description  String?
+  color        String?
+  position     Int           @default(0)
+  sortOrder    Int           @default(0)
+  allowedRoles String[]      @default([])
+  isArchived   Boolean       @default(false)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  createdById  String?
+  createdBy    User?         @relation("ForumCategoryCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  threads      ForumThread[]
 }
 
 model ForumThread {

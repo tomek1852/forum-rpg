@@ -1,9 +1,10 @@
 import { ForumCategoryShell } from "@/components/forum/forum-category-shell";
 
-export default function ForumCategoryPage({
+export default async function ForumCategoryPage({
   params,
 }: {
-  params: { categoryId: string };
+  params: Promise<{ categoryId: string }>;
 }) {
-  return <ForumCategoryShell categoryId={params.categoryId} />;
+  const { categoryId } = await params;
+  return <ForumCategoryShell categoryId={categoryId} />;
 }

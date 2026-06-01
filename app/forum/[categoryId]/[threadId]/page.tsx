@@ -1,14 +1,15 @@
 import { ForumThreadShell } from "@/components/forum/forum-thread-shell";
 
-export default function ForumThreadPage({
+export default async function ForumThreadPage({
   params,
 }: {
-  params: { categoryId: string; threadId: string };
+  params: Promise<{ categoryId: string; threadId: string }>;
 }) {
+  const { categoryId, threadId } = await params;
   return (
     <ForumThreadShell
-      categoryId={params.categoryId}
-      threadId={params.threadId}
+      categoryId={categoryId}
+      threadId={threadId}
     />
   );
 }

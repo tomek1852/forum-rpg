@@ -1,6 +1,7 @@
 import { Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
 import { ActivityLogModule } from "./activity-log/activity-log.module";
+import { AdminModule } from "./admin/admin.module";
 import { AuthModule } from "./auth/auth.module";
 import { CharactersModule } from "./characters/characters.module";
 import { EventsModule } from "./events/events.module";
@@ -23,6 +24,7 @@ import { WorldsModule } from "./worlds/worlds.module";
     }),
     PrismaModule,
     ActivityLogModule,
+    AdminModule,
     MailerModule,
     MessagesModule,
     UsersModule,

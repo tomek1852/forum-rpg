@@ -12,6 +12,7 @@ import {
   UserRole,
 } from "@prisma/client";
 import { ActivityLogService } from "../activity-log/activity-log.service";
+import { BadgesService } from "../badges/badges.service";
 import { NotificationsService } from "../notifications/notifications.service";
 import { PrismaService } from "../prisma/prisma.service";
 import { CreateSkillProposalDto } from "./dto/create-skill-proposal.dto";
@@ -50,6 +51,7 @@ export class SkillsService {
     private readonly notificationsService: NotificationsService,
     @Inject(ActivityLogService)
     private readonly activityLog: ActivityLogService,
+    @Inject(BadgesService) private readonly badgesService: BadgesService,
   ) {}
 
   async createProposal(userId: string, dto: CreateSkillProposalDto) {
@@ -230,6 +232,10 @@ export class SkillsService {
       skillName: proposal.name,
       characterId: proposal.characterId,
     });
+
+    if (dto.status === SkillProposalStatus.APPROVED) {
+      this.badgesService.checkAndAward(proposal.characterId).catch(() => undefined);
+    }
 
     return {
       message:

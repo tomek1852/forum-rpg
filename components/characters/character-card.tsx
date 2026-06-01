@@ -1,14 +1,20 @@
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import type { Character } from "@/lib/types";
+import type { Character, CharacterBadge } from "@/lib/types";
 
 export function CharacterCard({
   character,
   editable = false,
+  expRank,
+  phRank,
+  badges,
 }: {
   character: Character;
   editable?: boolean;
+  expRank?: number;
+  phRank?: number;
+  badges?: CharacterBadge[];
 }) {
   return (
     <Card className="h-full">
@@ -31,8 +37,23 @@ export function CharacterCard({
         </p>
         <div className="flex flex-wrap gap-2">
           <Badge>EXP: {character.experiencePoints}</Badge>
+          {expRank !== undefined && <Badge className="border border-current bg-transparent">#{expRank} EXP</Badge>}
           <Badge>PH: {character.heroPoints}</Badge>
+          {phRank !== undefined && <Badge className="border border-current bg-transparent">#{phRank} PH</Badge>}
         </div>
+        {badges && badges.length > 0 ? (
+          <div className="flex flex-wrap gap-2">
+            {badges.map((cb) => (
+              <span
+                key={cb.id}
+                className="flex h-8 w-8 items-center justify-center rounded-full bg-[color:var(--surface)] text-base ring-1 ring-[color:var(--border)]"
+                title={`${cb.badge.name}: ${cb.badge.description}`}
+              >
+                {cb.badge.icon}
+              </span>
+            ))}
+          </div>
+        ) : null}
         <div className="flex gap-3 text-sm font-semibold">
           <Link className="text-[color:var(--accent-strong)]" href={`/character/${character.id}`}>
             Szczegóły

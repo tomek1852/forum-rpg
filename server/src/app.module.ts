@@ -2,11 +2,13 @@ import { Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
 import { ActivityLogModule } from "./activity-log/activity-log.module";
 import { AdminModule } from "./admin/admin.module";
+import { BadgesModule } from "./badges/badges.module";
 import { AuthModule } from "./auth/auth.module";
 import { CharactersModule } from "./characters/characters.module";
 import { EventsModule } from "./events/events.module";
 import { ForumModule } from "./forum/forum.module";
 import { ModerationModule } from "./moderation/moderation.module";
+import { RankingsModule } from "./rankings/rankings.module";
 import { MailerModule } from "./mailer/mailer.module";
 import { MessagesModule } from "./messages/messages.module";
 import { NotificationsModule } from "./notifications/notifications.module";
@@ -25,6 +27,7 @@ import { WorldsModule } from "./worlds/worlds.module";
     PrismaModule,
     ActivityLogModule,
     AdminModule,
+    BadgesModule,
     MailerModule,
     MessagesModule,
     UsersModule,
@@ -36,6 +39,7 @@ import { WorldsModule } from "./worlds/worlds.module";
     PresenceModule,
     ForumModule,
     ModerationModule,
+    RankingsModule,
     AuthModule,
   ],
 })

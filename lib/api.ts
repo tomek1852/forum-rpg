@@ -77,6 +77,13 @@ import type {
   WorldLogsResponse,
   WorldMutationResponse,
   WorldsResponse,
+  WorldRankingsResponse,
+  CharacterRankResponse,
+  AwardBadgePayload,
+  BadgeMutationResponse,
+  BadgesResponse,
+  CharacterBadgesResponse,
+  CreateBadgePayload,
 } from "./types";
 
 const baseURL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001/api";
@@ -256,9 +263,29 @@ export async function getCharacter(characterId: string) {
   return data;
 }
 
-export async function getCharacterRankings(worldId?: string) {
-  const query = worldId ? `?${new URLSearchParams({ worldId }).toString()}` : "";
+export async function getCharacterRankings(params?: {
+  worldId?: string;
+  sortBy?: "exp" | "heroPoints" | "skillsCount" | "createdAt";
+  limit?: number;
+  cursor?: string;
+}) {
+  const search = new URLSearchParams();
+  if (params?.worldId) search.set("worldId", params.worldId);
+  if (params?.sortBy) search.set("sortBy", params.sortBy);
+  if (params?.limit) search.set("limit", String(params.limit));
+  if (params?.cursor) search.set("cursor", params.cursor);
+  const query = search.toString() ? `?${search.toString()}` : "";
   const { data } = await api.get<CharacterRankingsResponse>(`/characters/rankings${query}`);
+  return data;
+}
+
+export async function getWorldRankings() {
+  const { data } = await api.get<WorldRankingsResponse>("/rankings/worlds");
+  return data;
+}
+
+export async function getCharacterRank(characterId: string) {
+  const { data } = await api.get<CharacterRankResponse>(`/characters/${characterId}/rank`);
   return data;
 }
 
@@ -596,6 +623,34 @@ export async function updateAdminUserRole(userId: string, role: Role) {
 
 export async function getAdminStats() {
   const { data } = await api.get<AdminStatsResponse>("/admin/stats");
+  return data;
+}
+
+export async function getBadges(): Promise<BadgesResponse> {
+  const { data } = await api.get<BadgesResponse>("/badges");
+  return data;
+}
+
+export async function getCharacterBadges(characterId: string): Promise<CharacterBadgesResponse> {
+  const { data } = await api.get<CharacterBadgesResponse>(`/characters/${characterId}/badges`);
+  return data;
+}
+
+export async function createBadge(payload: CreateBadgePayload): Promise<BadgeMutationResponse> {
+  const { data } = await api.post<BadgeMutationResponse>("/admin/badges", payload);
+  return data;
+}
+
+export async function awardBadge(
+  characterId: string,
+  payload: AwardBadgePayload,
+): Promise<BadgeMutationResponse> {
+  const { data } = await api.post<BadgeMutationResponse>(`/characters/${characterId}/badges`, payload);
+  return data;
+}
+
+export async function removeBadge(characterId: string, badgeId: string): Promise<{ message: string }> {
+  const { data } = await api.delete<{ message: string }>(`/characters/${characterId}/badges/${badgeId}`);
   return data;
 }
 

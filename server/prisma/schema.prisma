@@ -27,6 +27,18 @@ enum NotificationType {
   SKILL_PROPOSAL_APPROVED
   SKILL_PROPOSAL_REJECTED
   MODERATION_REPORT_RESOLVED
+  BADGE_AWARDED
+}
+
+enum BadgeCondition {
+  FIRST_POST
+  FIRST_CHARACTER
+  EXP_100
+  EXP_500
+  EXP_1000
+  SKILL_APPROVED
+  EVENT_PARTICIPANT
+  CUSTOM
 }
 
 enum ModerationReportTargetType {
@@ -95,6 +107,7 @@ model User {
   reviewedSkillProposals SkillProposal[]   @relation("SkillProposalReviewer")
   grantedCharacterSkills CharacterSkill[]  @relation("CharacterSkillReviewer")
   grantedProgressEntries ProgressEntry[]   @relation("ProgressEntryGrantor")
+  awardedBadges          CharacterBadge[]  @relation("CharacterBadgeAwarder")
   createdEvents       Event[]              @relation("EventCreator")
   reviewedEventParticipations EventParticipation[] @relation("EventParticipationReviewer")
   createdWorldLogs    WorldLog[]           @relation("WorldLogAuthor")
@@ -192,6 +205,7 @@ model Character {
   skills      CharacterSkill[]
   progressEntries ProgressEntry[]
   eventParticipations EventParticipation[]
+  badges      CharacterBadge[]
 
   @@index([ownerId])
   @@index([worldId])
@@ -465,6 +479,34 @@ model ActivityLog {
   @@index([actorId, createdAt])
   @@index([action, createdAt])
   @@index([targetType, targetId])
+}
+
+model Badge {
+  id          String         @id @default(uuid())
+  name        String
+  description String
+  icon        String
+  condition   BadgeCondition
+  threshold   Int?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  characterBadges CharacterBadge[]
+}
+
+model CharacterBadge {
+  id          String    @id @default(uuid())
+  awardedAt   DateTime  @default(now())
+  note        String?
+  characterId String
+  badgeId     String
+  awardedById String?
+  character   Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  badge       Badge     @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+  awardedBy   User?     @relation("CharacterBadgeAwarder", fields: [awardedById], references: [id], onDelete: SetNull)
+
+  @@unique([characterId, badgeId])
+  @@index([characterId])
+  @@index([badgeId])
 }
 
 model ModerationReport {

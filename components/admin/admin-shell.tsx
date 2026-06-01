@@ -14,10 +14,12 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
+  createBadge,
   getActivityLog,
   getAdminStats,
   getAdminUsers,
   getApiErrorMessage,
+  getBadges,
   getCurrentUser,
   updateAdminUserRole,
   updateAdminUserStatus,
@@ -27,11 +29,14 @@ import type {
   AccountStatus,
   ActivityLogEntry,
   AdminStatsResponse,
+  Badge as BadgeDefinition,
+  BadgeCondition,
+  CreateBadgePayload,
   Role,
   User,
 } from "@/lib/types";
 
-type Tab = "users" | "stats" | "activity-log";
+type Tab = "users" | "stats" | "activity-log" | "badges";
 
 const ROLE_OPTIONS: Role[] = ["PLAYER", "GM", "ADMIN"];
 const STATUS_OPTIONS: AccountStatus[] = ["PENDING_APPROVAL", "ACTIVE", "BLOCKED"];
@@ -169,6 +174,21 @@ export function AdminShell() {
     onError: (err) => setMutationError(getApiErrorMessage(err)),
   });
 
+  const badgesQuery = useQuery({
+    queryKey: ["admin-badges"],
+    queryFn: getBadges,
+    enabled: hydrated && Boolean(accessToken) && isAdmin && activeTab === "badges",
+  });
+
+  const createBadgeMutation = useMutation({
+    mutationFn: createBadge,
+    onSuccess: () => {
+      setMutationError(null);
+      void queryClient.invalidateQueries({ queryKey: ["admin-badges"] });
+    },
+    onError: (err) => setMutationError(getApiErrorMessage(err)),
+  });
+
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();
     setSearch(searchInput);
@@ -187,6 +207,7 @@ export function AdminShell() {
     { key: "users", label: "Użytkownicy" },
     { key: "stats", label: "Statystyki" },
     { key: "activity-log", label: "Log aktywności" },
+    { key: "badges", label: "Odznaki" },
   ];
 
   return (
@@ -325,6 +346,15 @@ export function AdminShell() {
             setActivityCursor(activityLogQuery.data?.nextCursor ?? undefined)
           }
           onFirstPage={() => setActivityCursor(undefined)}
+        />
+      )}
+
+      {activeTab === "badges" && (
+        <BadgesAdminTab
+          badges={badgesQuery.data?.badges ?? []}
+          isLoading={badgesQuery.isLoading}
+          onCreateBadge={(payload) => createBadgeMutation.mutate(payload)}
+          isCreating={createBadgeMutation.isPending}
         />
       )}
     </div>
@@ -488,6 +518,151 @@ function StatsTab({
             <p className="text-3xl font-bold">{data.activeConversationCount}</p>
           </CardContent>
         </Card>
+      </div>
+    </div>
+  );
+}
+
+const BADGE_CONDITION_OPTIONS: Array<{ value: BadgeCondition; label: string }> = [
+  { value: "FIRST_POST", label: "Pierwszy post" },
+  { value: "FIRST_CHARACTER", label: "Pierwsza postać" },
+  { value: "EXP_100", label: "100 EXP" },
+  { value: "EXP_500", label: "500 EXP" },
+  { value: "EXP_1000", label: "1000 EXP" },
+  { value: "SKILL_APPROVED", label: "Zatwierdzona umiejętność" },
+  { value: "EVENT_PARTICIPANT", label: "Uczestnik eventu" },
+  { value: "CUSTOM", label: "Ręcznie (niestandardowa)" },
+];
+
+function BadgesAdminTab({
+  badges,
+  isLoading,
+  onCreateBadge,
+  isCreating,
+}: {
+  badges: BadgeDefinition[];
+  isLoading: boolean;
+  onCreateBadge: (payload: CreateBadgePayload) => void;
+  isCreating: boolean;
+}) {
+  const [form, setForm] = useState<CreateBadgePayload>({
+    name: "",
+    description: "",
+    icon: "🏅",
+    condition: "CUSTOM",
+  });
+  const [formError, setFormError] = useState<string | null>(null);
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!form.name.trim() || !form.description.trim() || !form.icon.trim()) {
+      setFormError("Wypełnij wszystkie wymagane pola.");
+      return;
+    }
+    setFormError(null);
+    onCreateBadge(form);
+    setForm({ name: "", description: "", icon: "🏅", condition: "CUSTOM" });
+  }
+
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Utwórz nową odznakę</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div className="space-y-1">
+                <label className="text-sm font-medium">Nazwa *</label>
+                <Input
+                  value={form.name}
+                  onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+                  maxLength={80}
+                  placeholder="np. Pierwszy krok"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-sm font-medium">Ikona (emoji) *</label>
+                <Input
+                  value={form.icon}
+                  onChange={(e) => setForm((f) => ({ ...f, icon: e.target.value }))}
+                  maxLength={10}
+                  placeholder="🏅"
+                />
+              </div>
+            </div>
+            <div className="space-y-1">
+              <label className="text-sm font-medium">Opis *</label>
+              <Input
+                value={form.description}
+                onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+                maxLength={400}
+                placeholder="Krótki opis warunków przyznania..."
+              />
+            </div>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div className="space-y-1">
+                <label className="text-sm font-medium">Warunek</label>
+                <select
+                  value={form.condition}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, condition: e.target.value as BadgeCondition }))
+                  }
+                  className="w-full border rounded px-2 py-2 text-sm bg-background"
+                >
+                  {BADGE_CONDITION_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value}>{o.label}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="space-y-1">
+                <label className="text-sm font-medium">Próg (opcjonalnie)</label>
+                <Input
+                  type="number"
+                  min={1}
+                  value={form.threshold ?? ""}
+                  onChange={(e) =>
+                    setForm((f) => ({
+                      ...f,
+                      threshold: e.target.value ? Number(e.target.value) : undefined,
+                    }))
+                  }
+                  placeholder="np. 3"
+                />
+              </div>
+            </div>
+            {formError && <p className="text-sm text-destructive">{formError}</p>}
+            <Button type="submit" disabled={isCreating}>
+              {isCreating ? "Tworzenie..." : "Utwórz odznakę"}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+
+      <div className="space-y-2">
+        <h2 className="text-lg font-semibold">Istniejące odznaki ({badges.length})</h2>
+        {isLoading && <p className="text-sm text-muted-foreground">Ładowanie...</p>}
+        {!isLoading && badges.length === 0 && (
+          <p className="text-sm text-muted-foreground">Brak zdefiniowanych odznak.</p>
+        )}
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {badges.map((badge) => (
+            <Card key={badge.id}>
+              <CardContent className="flex items-start gap-3 pt-4">
+                <span className="text-3xl">{badge.icon}</span>
+                <div className="min-w-0">
+                  <p className="font-semibold truncate">{badge.name}</p>
+                  <p className="text-xs text-muted-foreground">{badge.description}</p>
+                  <Badge className="mt-1 text-xs">
+                    {BADGE_CONDITION_OPTIONS.find((o) => o.value === badge.condition)?.label ?? badge.condition}
+                    {badge.threshold ? ` (≥${badge.threshold})` : ""}
+                  </Badge>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       </div>
     </div>
   );

@@ -25,7 +25,8 @@ describe("EventsService", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    service = new EventsService(prisma as never);
+    const badgesService = { checkAndAward: jest.fn().mockResolvedValue(undefined) };
+    service = new EventsService(prisma as never, badgesService as never);
   });
 
   it("creates an event", async () => {

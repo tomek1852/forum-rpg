@@ -23,12 +23,13 @@ describe("CharactersService", () => {
   };
 
   const activityLog = { log: jest.fn() };
+  const badgesService = { checkAndAward: jest.fn().mockResolvedValue(undefined) };
 
   let service: CharactersService;
 
   beforeEach(() => {
     jest.clearAllMocks();
-    service = new CharactersService(prisma as never, activityLog as never);
+    service = new CharactersService(prisma as never, activityLog as never, badgesService as never);
   });
 
   it("creates a character for the owner", async () => {
@@ -161,35 +162,29 @@ describe("CharactersService", () => {
       {
         id: "char-2",
         name: "Bastion",
+        avatarUrl: null,
         experiencePoints: 12,
         heroPoints: 5,
-        world: {
-          id: "world-1",
-          name: "Arbor",
-          slug: "arbor",
-        },
+        createdAt: new Date("2024-01-02"),
+        world: { id: "world-1", name: "Arbor", slug: "arbor" },
       },
       {
         id: "char-1",
         name: "Aster",
+        avatarUrl: null,
         experiencePoints: 12,
         heroPoints: 3,
-        world: {
-          id: "world-1",
-          name: "Arbor",
-          slug: "arbor",
-        },
+        createdAt: new Date("2024-01-01"),
+        world: { id: "world-1", name: "Arbor", slug: "arbor" },
       },
       {
         id: "char-3",
         name: "Cinder",
+        avatarUrl: null,
         experiencePoints: 8,
         heroPoints: 9,
-        world: {
-          id: "world-2",
-          name: "Nox",
-          slug: "nox",
-        },
+        createdAt: new Date("2024-01-03"),
+        world: { id: "world-2", name: "Nox", slug: "nox" },
       },
     ]);
 
@@ -201,7 +196,7 @@ describe("CharactersService", () => {
           isPublic: true,
           worldId: "world-1",
         },
-        orderBy: [{ experiencePoints: "desc" }, { heroPoints: "desc" }, { name: "asc" }],
+        orderBy: [{ experiencePoints: "desc" }, { heroPoints: "desc" }, { id: "asc" }],
       }),
     );
     expect(result.rankings).toEqual([
@@ -254,24 +249,20 @@ describe("CharactersService", () => {
       {
         id: "char-1",
         name: "Aster",
+        avatarUrl: null,
         experiencePoints: 6,
         heroPoints: 2,
-        world: {
-          id: "world-1",
-          name: "Arbor",
-          slug: "arbor",
-        },
+        createdAt: new Date("2024-01-01"),
+        world: { id: "world-1", name: "Arbor", slug: "arbor" },
       },
       {
         id: "char-2",
         name: "Bastion",
+        avatarUrl: null,
         experiencePoints: 5,
         heroPoints: 4,
-        world: {
-          id: "world-1",
-          name: "Arbor",
-          slug: "arbor",
-        },
+        createdAt: new Date("2024-01-02"),
+        world: { id: "world-1", name: "Arbor", slug: "arbor" },
       },
     ]);
 
@@ -337,6 +328,198 @@ describe("CharactersService", () => {
         },
       ),
     ).rejects.toBeInstanceOf(ForbiddenException);
+  });
+
+  it("sorts rankings by heroPoints when sortBy=heroPoints", async () => {
+    prisma.character.findMany.mockResolvedValueOnce([
+      {
+        id: "char-b",
+        name: "Bastion",
+        avatarUrl: null,
+        experiencePoints: 5,
+        heroPoints: 10,
+        createdAt: new Date("2024-01-02"),
+        world: { id: "world-1", name: "Arbor", slug: "arbor" },
+      },
+      {
+        id: "char-a",
+        name: "Aster",
+        avatarUrl: null,
+        experiencePoints: 20,
+        heroPoints: 3,
+        createdAt: new Date("2024-01-01"),
+        world: { id: "world-1", name: "Arbor", slug: "arbor" },
+      },
+    ]);
+
+    const result = await service.listRankings({ sortBy: "heroPoints" });
+
+    expect(prisma.character.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        orderBy: [{ heroPoints: "desc" }, { experiencePoints: "desc" }, { id: "asc" }],
+      }),
+    );
+    expect(result.rankings[0].characterId).toBe("char-b");
+    expect(result.rankings[0].position).toBe(1);
+    expect(result.rankings[1].characterId).toBe("char-a");
+  });
+
+  it("filters rankings by worldId", async () => {
+    prisma.character.findMany.mockResolvedValueOnce([
+      {
+        id: "char-1",
+        name: "Aster",
+        avatarUrl: null,
+        experiencePoints: 10,
+        heroPoints: 2,
+        createdAt: new Date("2024-01-01"),
+        world: { id: "world-1", name: "Arbor", slug: "arbor" },
+      },
+    ]);
+
+    const result = await service.listRankings({ worldId: "world-1" });
+
+    expect(prisma.character.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { isPublic: true, worldId: "world-1" },
+      }),
+    );
+    expect(result.rankings).toHaveLength(1);
+    expect(result.rankings[0].characterId).toBe("char-1");
+  });
+
+  it("paginates rankings with cursor", async () => {
+    const page1Data = [
+      {
+        id: "char-a",
+        name: "Alpha",
+        avatarUrl: null,
+        experiencePoints: 30,
+        heroPoints: 5,
+        createdAt: new Date("2024-01-01"),
+        world: null,
+      },
+      {
+        id: "char-b",
+        name: "Beta",
+        avatarUrl: null,
+        experiencePoints: 20,
+        heroPoints: 4,
+        createdAt: new Date("2024-01-02"),
+        world: null,
+      },
+    ];
+    prisma.character.findMany.mockResolvedValueOnce(page1Data);
+
+    const page1 = await service.listRankings({ limit: 2 });
+
+    expect(page1.rankings).toHaveLength(2);
+    expect(page1.nextCursor).toBeNull();
+
+    const page2Data = [
+      {
+        id: "char-c",
+        name: "Gamma",
+        avatarUrl: null,
+        experiencePoints: 10,
+        heroPoints: 3,
+        createdAt: new Date("2024-01-03"),
+        world: null,
+      },
+    ];
+    prisma.character.findMany.mockResolvedValueOnce(page2Data);
+
+    const page2 = await service.listRankings({ limit: 2, cursor: "char-b" });
+
+    expect(prisma.character.findMany).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        cursor: { id: "char-b" },
+        skip: 1,
+        take: 3,
+      }),
+    );
+    expect(page2.rankings[0].characterId).toBe("char-c");
+    expect(page2.nextCursor).toBeNull();
+  });
+
+  it("returns nextCursor when more pages exist", async () => {
+    const data = Array.from({ length: 21 }, (_, i) => ({
+      id: `char-${i}`,
+      name: `Char ${i}`,
+      avatarUrl: null,
+      experiencePoints: 100 - i,
+      heroPoints: 0,
+      createdAt: new Date("2024-01-01"),
+      world: null,
+    }));
+    prisma.character.findMany.mockResolvedValueOnce(data);
+
+    const result = await service.listRankings({ limit: 20 });
+
+    expect(result.rankings).toHaveLength(20);
+    expect(result.nextCursor).toBe("char-19");
+  });
+
+  it("reflects updated EXP in rankings after granting progress", async () => {
+    const tx = {
+      character: {
+        findUnique: jest.fn().mockResolvedValueOnce({ id: "char-1" }),
+        update: jest.fn().mockResolvedValueOnce({
+          id: "char-1",
+          ownerId: "user-1",
+          name: "Aster",
+          experiencePoints: 15,
+          heroPoints: 2,
+          statValues: [],
+        }),
+      },
+      progressEntry: {
+        create: jest.fn().mockResolvedValueOnce({
+          id: "progress-1",
+          characterId: "char-1",
+          expDelta: 10,
+          phDelta: 0,
+          reason: "Sesja",
+        }),
+      },
+    };
+    prisma.$transaction.mockImplementationOnce((callback) => callback(tx));
+    prisma.character.findMany.mockResolvedValueOnce([
+      {
+        id: "char-1",
+        name: "Aster",
+        avatarUrl: null,
+        experiencePoints: 15,
+        heroPoints: 2,
+        createdAt: new Date("2024-01-01"),
+        world: { id: "world-1", name: "Arbor", slug: "arbor" },
+      },
+      {
+        id: "char-2",
+        name: "Bastion",
+        avatarUrl: null,
+        experiencePoints: 10,
+        heroPoints: 5,
+        createdAt: new Date("2024-01-02"),
+        world: { id: "world-1", name: "Arbor", slug: "arbor" },
+      },
+    ]);
+
+    await service.grantProgress(
+      "char-1",
+      { userId: "gm-1", role: "GM" },
+      { expDelta: 10, reason: "Sesja" },
+    );
+
+    const result = await service.listRankings();
+
+    expect(result.rankings[0]).toEqual(
+      expect.objectContaining({
+        position: 1,
+        characterId: "char-1",
+        experiencePoints: 15,
+      }),
+    );
   });
 
   it("blocks progress history for other players", async () => {

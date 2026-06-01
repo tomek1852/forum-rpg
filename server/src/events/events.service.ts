@@ -6,6 +6,7 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import { EventParticipationStatus, Prisma, UserRole } from "@prisma/client";
+import { BadgesService } from "../badges/badges.service";
 import { PrismaService } from "../prisma/prisma.service";
 import { CreateEventParticipationDto } from "./dto/create-event-participation.dto";
 import { CreateEventDto } from "./dto/create-event.dto";
@@ -88,7 +89,10 @@ type EventRequester = {
 
 @Injectable()
 export class EventsService {
-  constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
+  constructor(
+    @Inject(PrismaService) private readonly prisma: PrismaService,
+    @Inject(BadgesService) private readonly badgesService: BadgesService,
+  ) {}
 
   async listEvents(requester: EventRequester) {
     const events = await this.prisma.event.findMany({
@@ -315,6 +319,10 @@ export class EventsService {
       },
       include: eventParticipationInclude,
     });
+
+    if (dto.status === EventParticipationStatus.APPROVED) {
+      this.badgesService.checkAndAward(participation.characterId).catch(() => undefined);
+    }
 
     return {
       message:

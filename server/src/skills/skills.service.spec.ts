@@ -33,7 +33,8 @@ describe("SkillsService", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    service = new SkillsService(prisma as never, notificationsService as never, activityLog as never);
+    const badgesService = { checkAndAward: jest.fn().mockResolvedValue(undefined) };
+    service = new SkillsService(prisma as never, notificationsService as never, activityLog as never, badgesService as never);
   });
 
   it("creates a skill proposal for the character owner", async () => {

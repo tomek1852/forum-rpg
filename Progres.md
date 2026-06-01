@@ -204,6 +204,41 @@
 - Strona `/forum` opakowana w `<Suspense>` ze względu na `useSearchParams()`.
 - Zweryfikowano poleceniami: `npm --prefix server run test` (63/63), `npm --prefix server run build`, `npm run lint`, `npm run test:web` (4/4), `npm run build:web`.
 
+## 2026-06-01 - ETAP 4 — Rozszerzony ranking i publiczny leaderboard - DONE
+
+- Rozbudowano endpoint `GET /characters/rankings` o parametry: `sortBy` ("exp" | "heroPoints" | "skillsCount" | "createdAt"), `worldId`, `limit` (max 100, domyślnie 20), `cursor` (cursor-based pagination po id).
+- Sortowanie po `skillsCount` działa w pamięci po pobraniu `_count.skills` z Prismy; pozostałe sortowania używają natywnego `orderBy` Prismy.
+- Dodano endpoint `GET /characters/:id/rank` zwracający globalną pozycję postaci w rankingu EXP i PH oraz pozycję w obrębie jej świata (4 wartości: `globalExpRank`, `globalPhRank`, `worldExpRank`, `worldPhRank`).
+- Dodano nowy moduł `RankingsModule` z endpointem `GET /rankings/worlds` zwracającym liczbę aktywnych postaci, sumę EXP i datę ostatniej aktywności per aktywny świat.
+- Zaimplementowano in-memory cache (Map z TTL 60s) w `CharactersService` i `RankingsService` bez Redisa; cache rankingów jest inwalidowany po każdym przyznaniu progresu EXP/PH.
+- Dodano awatar postaci (`avatarUrl`) do odpowiedzi rankingowej.
+- Zaktualizowano `CharacterRankingEntry` o pole `avatarUrl` i `nextCursor` w odpowiedzi; dodano typy `WorldRankingEntry`, `WorldRankingsResponse`, `CharacterRankResponse` do `lib/types.ts`.
+- Zaktualizowano `lib/api.ts` o nowe parametry `getCharacterRankings`, funkcje `getWorldRankings` i `getCharacterRank`.
+- Rozbudowano `/rankings`: dwie zakładki "Postacie" i "Światy", select sortowania, select świata, tabela postaci z awatarem, linkiem do profilu i pozycją.
+- Na karcie szczegółów postaci (`character-detail-shell.tsx`) `ProgressBadge` wyświetla teraz `#{n} w rankingu` pod wartością EXP i PH (dane z `GET /characters/:id/rank`).
+- `CharacterCard` dostał opcjonalne propsy `expRank` i `phRank` wyświetlające badge pozycji przy EXP i PH.
+- Dodano 5 nowych testów backendowych: sortowanie po `heroPoints`, filtr `worldId`, paginacja cursor-based, wykrywanie kolejnej strony (`nextCursor`), aktualizacja pozycji po zmianie EXP.
+- Zweryfikowano poleceniami: `npm --prefix server run test` (68/68), `npm --prefix server run build`, `npm run lint`, `npm run test:web` (4/4), `npm run build:web`.
+
+## 2026-06-01 - System odznak (Badges) - DONE
+
+- Dodano enum `BadgeCondition` (FIRST_POST | FIRST_CHARACTER | EXP_100 | EXP_500 | EXP_1000 | SKILL_APPROVED | EVENT_PARTICIPANT | CUSTOM) oraz rozszerzono `NotificationType` o wartość `BADGE_AWARDED` w `schema.prisma`.
+- Dodano modele `Badge` (id, name, description, icon, condition, threshold?) i `CharacterBadge` (id, characterId, badgeId, awardedById?, awardedAt, note?) z unikalnym indeksem `(characterId, badgeId)`.
+- Stworzono ręczną migrację SQL `202605_badges` tworzącą enuma, oba modele i klucze obce.
+- Zaimplementowano backendowy moduł `badges` w NestJS z `BadgesService` zawierającym: `listAll`, `listForCharacter`, `createBadge`, `awardBadge`, `removeBadge`, `checkAndAward(characterId)`, `checkAndAwardForUser(userId)`.
+- `checkAndAward` pobiera z bazy odznaki z warunkami automatycznymi i przyznaje brakujące dla postaci; po przyznaniu wysyła powiadomienie in-app przez `NotificationsService`.
+- `BadgesController` udostępnia endpointy: `GET /badges` (publiczny), `GET /characters/:id/badges`, `POST /admin/badges` (ADMIN), `POST /characters/:id/badges` (GM/ADMIN + note), `DELETE /characters/:id/badges/:badgeId` (ADMIN).
+- Podpięto wywołania `checkAndAward` / `checkAndAwardForUser` (fire-and-forget z `.catch`) w: `CharactersService.create` (FIRST_CHARACTER), `CharactersService.grantProgress` (EXP_*), `ForumService.createPost` (FIRST_POST), `SkillsService.reviewProposal` (SKILL_APPROVED), `EventsService.reviewParticipation` (EVENT_PARTICIPANT).
+- Dodano testy backendowe w `badges.service.spec.ts`: FIRST_POST przyznawana po pierwszym poście, EXP_100 przy EXP >= 100, brak duplikatów, GM przyznaje CUSTOM, ConflictException dla duplikatu, NotFoundException dla nieznanej postaci.
+- Zaktualizowano istniejące testy (`characters`, `forum`, `skills`, `events`) o mock `BadgesService` — wszystkie 76 testów przechodzi.
+- Na frontendzie `character-detail-shell.tsx` dostał sekcję "Odznaki" z ikonami i tooltipem (nazwa, opis, notatka).
+- `CharacterCard` dostał opcjonalny prop `badges?: CharacterBadge[]` wyświetlający ikony odznak z tooltipem.
+- W panelu `/admin` dodano zakładkę "Odznaki" z formularzem tworzenia definicji odznak (nazwa, ikona, opis, warunek, próg) i listą istniejących.
+- W panelu `/mg` (WorldManagementShell) dodano sekcję "Odznaki" z formularzem ręcznego przyznawania odznaki po ID postaci.
+- Dodano typy `Badge`, `CharacterBadge`, `BadgeCondition`, `BadgesResponse`, `CharacterBadgesResponse`, `BadgeMutationResponse`, `CreateBadgePayload`, `AwardBadgePayload` do `lib/types.ts`.
+- Dodano funkcje `getBadges`, `getCharacterBadges`, `createBadge`, `awardBadge`, `removeBadge` do `lib/api.ts`.
+- Zweryfikowano poleceniami: `npm --prefix server run test` (76/76), `npm --prefix server run build`, `npm run lint`, `npm run test:web` (4/4), `npm run build:web`.
+
 ## 2026-05-10 - ETAP 3 - WorldLog MVP - IN PROGRESS
 
 - Dodano model `WorldLog` wraz z migracja Prisma oraz relacjami do `World` i autora wpisu `User`.

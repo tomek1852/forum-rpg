@@ -14,16 +14,18 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
+  awardBadge,
   createWorld,
   createWorldStatDefinition,
   getApiErrorMessage,
+  getBadges,
   getCurrentUser,
   getSkillProposalsReviewQueue,
   getWorlds,
   reviewSkillProposal,
 } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
-import type { Role, SkillProposal, SkillProposalStatus } from "@/lib/types";
+import type { AwardBadgePayload, Badge as BadgeDefinition, Role, SkillProposal, SkillProposalStatus } from "@/lib/types";
 import { statDefinitionSchema, worldSchema } from "@/lib/validators";
 import { ForumCategoriesManager } from "@/components/forum/forum-categories-manager";
 
@@ -509,8 +511,116 @@ export function WorldManagementShell() {
         </section>
 
         <ForumCategoriesManager />
+
+        <MgBadgesSection />
       </div>
     </div>
+  );
+}
+
+function MgBadgesSection() {
+  const queryClient = useQueryClient();
+  const [characterId, setCharacterId] = useState("");
+  const [selectedBadgeId, setSelectedBadgeId] = useState("");
+  const [note, setNote] = useState("");
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  const badgesQuery = useQuery({
+    queryKey: ["mg-badges-list"],
+    queryFn: getBadges,
+  });
+
+  const awardMutation = useMutation({
+    mutationFn: ({ cid, payload }: { cid: string; payload: AwardBadgePayload }) =>
+      awardBadge(cid, payload),
+    onSuccess: () => {
+      setSuccessMsg("Odznaka przyznana.");
+      setCharacterId("");
+      setSelectedBadgeId("");
+      setNote("");
+      setErrorMsg(null);
+      void queryClient.invalidateQueries({ queryKey: ["character-badges"] });
+    },
+    onError: (err) => {
+      setErrorMsg(getApiErrorMessage(err));
+      setSuccessMsg(null);
+    },
+  });
+
+  const badges: BadgeDefinition[] = badgesQuery.data?.badges ?? [];
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!characterId.trim() || !selectedBadgeId) {
+      setErrorMsg("Podaj ID postaci i wybierz odznakę.");
+      return;
+    }
+    awardMutation.mutate({
+      cid: characterId.trim(),
+      payload: { badgeId: selectedBadgeId, note: note.trim() || undefined },
+    });
+  }
+
+  return (
+    <section className="space-y-4">
+      <div>
+        <h2 className="font-display text-3xl text-[color:var(--foreground)]">Odznaki</h2>
+        <p className="mt-2 text-sm leading-7 text-[color:var(--foreground-muted)]">
+          Przyznaj odznakę ręcznie dowolnej postaci. Automatyczne odznaki są przyznawane przez
+          system.
+        </p>
+      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Ręczne przyznanie odznaki</CardTitle>
+          <CardDescription>
+            Podaj ID postaci (UUID ze strony profilu) i wybierz odznakę.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="grid gap-4">
+            <div>
+              <Label>ID postaci *</Label>
+              <Input
+                value={characterId}
+                onChange={(e) => setCharacterId(e.target.value)}
+                placeholder="UUID postaci"
+              />
+            </div>
+            <div>
+              <Label>Odznaka *</Label>
+              <select
+                value={selectedBadgeId}
+                onChange={(e) => setSelectedBadgeId(e.target.value)}
+                className="w-full border rounded px-2 py-2 text-sm bg-background"
+              >
+                <option value="">— wybierz odznakę —</option>
+                {badges.map((b) => (
+                  <option key={b.id} value={b.id}>
+                    {b.icon} {b.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <Label>Notatka (opcjonalnie)</Label>
+              <Input
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                placeholder="Powód przyznania..."
+                maxLength={400}
+              />
+            </div>
+            {errorMsg && <p className="text-sm text-[#9d3d2d]">{errorMsg}</p>}
+            {successMsg && <p className="text-sm text-green-700">{successMsg}</p>}
+            <Button type="submit" disabled={awardMutation.isPending}>
+              {awardMutation.isPending ? "Przyznawanie..." : "Przyznaj odznakę"}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+    </section>
   );
 }
 

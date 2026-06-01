@@ -7,12 +7,44 @@ import {
 } from "@nestjs/common";
 import { Character, Prisma, SkillProposalStatus, StatValueType } from "@prisma/client";
 import { ActivityLogService } from "../activity-log/activity-log.service";
+import { BadgesService } from "../badges/badges.service";
 import { PrismaService } from "../prisma/prisma.service";
 import { AddProgressDto } from "./dto/add-progress.dto";
 import { CharacterRankingQueryDto } from "./dto/character-ranking-query.dto";
 import { CreateCharacterDto } from "./dto/create-character.dto";
 import { CharacterStatValueInputDto } from "./dto/character-stat-value-input.dto";
 import { UpdateCharacterDto } from "./dto/update-character.dto";
+
+const CACHE_TTL_MS = 60_000;
+
+interface CacheEntry<T> {
+  value: T;
+  expiresAt: number;
+}
+
+class SimpleCache {
+  private readonly store = new Map<string, CacheEntry<unknown>>();
+
+  get<T>(key: string): T | null {
+    const entry = this.store.get(key);
+    if (!entry) return null;
+    if (Date.now() > entry.expiresAt) {
+      this.store.delete(key);
+      return null;
+    }
+    return entry.value as T;
+  }
+
+  set<T>(key: string, value: T): void {
+    this.store.set(key, { value, expiresAt: Date.now() + CACHE_TTL_MS });
+  }
+
+  invalidate(prefix: string): void {
+    for (const key of this.store.keys()) {
+      if (key.startsWith(prefix)) this.store.delete(key);
+    }
+  }
+}
 
 const characterInclude = {
   world: {
@@ -64,9 +96,12 @@ const progressEntryInclude = {
 
 @Injectable()
 export class CharactersService {
+  private readonly cache = new SimpleCache();
+
   constructor(
     @Inject(PrismaService) private readonly prisma: PrismaService,
     @Inject(ActivityLogService) private readonly activityLog: ActivityLogService,
+    @Inject(BadgesService) private readonly badgesService: BadgesService,
   ) {}
 
   async create(ownerId: string, dto: CreateCharacterDto) {
@@ -87,6 +122,8 @@ export class CharactersService {
       where: { id: createdCharacter.id },
       include: characterInclude,
     });
+
+    this.badgesService.checkAndAward(createdCharacter.id).catch(() => undefined);
 
     return {
       character: this.serializeCharacter(character, {
@@ -127,37 +164,173 @@ export class CharactersService {
   }
 
   async listRankings(query: CharacterRankingQueryDto = {}) {
+    const limit = Math.min(query.limit ?? 20, 100);
+    const sortBy = query.sortBy ?? "exp";
+    const cacheKey = `rankings:${sortBy}:${query.worldId ?? "all"}:${query.cursor ?? ""}:${limit}`;
+
+    const cached = this.cache.get<ReturnType<typeof this._buildRankingsResponse>>(cacheKey);
+    if (cached) return cached;
+
+    const orderBy = this.getRankingOrderBy(sortBy);
+    const needsSkillCount = sortBy === "skillsCount";
+
+    const where: Prisma.CharacterWhereInput = {
+      isPublic: true,
+      ...(query.worldId ? { worldId: query.worldId } : {}),
+    };
+
     const characters = await this.prisma.character.findMany({
-      where: {
-        isPublic: true,
-        ...(query.worldId ? { worldId: query.worldId } : {}),
-      },
+      where,
       select: {
         id: true,
         name: true,
+        avatarUrl: true,
         experiencePoints: true,
         heroPoints: true,
-        world: {
-          select: {
-            id: true,
-            name: true,
-            slug: true,
-          },
-        },
+        createdAt: true,
+        world: { select: { id: true, name: true, slug: true } },
+        ...(needsSkillCount ? { _count: { select: { skills: true } } } : {}),
       },
-      orderBy: [{ experiencePoints: "desc" }, { heroPoints: "desc" }, { name: "asc" }],
+      ...(orderBy ? { orderBy } : {}),
+      ...(query.cursor ? { cursor: { id: query.cursor }, skip: 1 } : {}),
+      take: limit + 1,
     });
 
+    let sorted = characters as Array<typeof characters[number] & { _count?: { skills: number } }>;
+    if (needsSkillCount) {
+      sorted = [...sorted].sort((a, b) => {
+        const diff = (b._count?.skills ?? 0) - (a._count?.skills ?? 0);
+        return diff !== 0 ? diff : a.id.localeCompare(b.id);
+      });
+    }
+
+    const hasNextPage = sorted.length > limit;
+    const page = hasNextPage ? sorted.slice(0, limit) : sorted;
+    const nextCursor = hasNextPage ? page[page.length - 1].id : null;
+
+    const result = this._buildRankingsResponse(page, nextCursor);
+    this.cache.set(cacheKey, result);
+    return result;
+  }
+
+  private _buildRankingsResponse(
+    characters: Array<{
+      id: string;
+      name: string;
+      avatarUrl: string | null;
+      experiencePoints: number;
+      heroPoints: number;
+      world: { id: string; name: string; slug: string } | null;
+    }>,
+    nextCursor: string | null,
+  ) {
     return {
       rankings: characters.map((character, index) => ({
         position: index + 1,
         characterId: character.id,
         name: character.name,
+        avatarUrl: character.avatarUrl,
         world: character.world,
         experiencePoints: character.experiencePoints,
         heroPoints: character.heroPoints,
       })),
+      nextCursor,
     };
+  }
+
+  private getRankingOrderBy(sortBy: string): Prisma.CharacterOrderByWithRelationInput[] | undefined {
+    switch (sortBy) {
+      case "heroPoints":
+        return [{ heroPoints: "desc" }, { experiencePoints: "desc" }, { id: "asc" }];
+      case "createdAt":
+        return [{ createdAt: "desc" }, { id: "asc" }];
+      case "skillsCount":
+        return undefined;
+      case "exp":
+      default:
+        return [{ experiencePoints: "desc" }, { heroPoints: "desc" }, { id: "asc" }];
+    }
+  }
+
+  async getCharacterRank(characterId: string) {
+    const cacheKey = `rank:${characterId}`;
+    const cached = this.cache.get<{
+      globalExpRank: number;
+      globalPhRank: number;
+      worldExpRank: number | null;
+      worldPhRank: number | null;
+      worldId: string | null;
+    }>(cacheKey);
+    if (cached) return cached;
+
+    const character = await this.prisma.character.findUnique({
+      where: { id: characterId },
+      select: { id: true, experiencePoints: true, heroPoints: true, worldId: true, isPublic: true },
+    });
+
+    if (!character) throw new NotFoundException("Nie znaleziono postaci.");
+
+    const [globalExpRank, globalPhRank] = await Promise.all([
+      this.prisma.character.count({
+        where: {
+          isPublic: true,
+          OR: [
+            { experiencePoints: { gt: character.experiencePoints } },
+            { experiencePoints: character.experiencePoints, id: { lt: characterId } },
+          ],
+        },
+      }),
+      this.prisma.character.count({
+        where: {
+          isPublic: true,
+          OR: [
+            { heroPoints: { gt: character.heroPoints } },
+            { heroPoints: character.heroPoints, id: { lt: characterId } },
+          ],
+        },
+      }),
+    ]);
+
+    let worldExpRank: number | null = null;
+    let worldPhRank: number | null = null;
+
+    if (character.worldId) {
+      [worldExpRank, worldPhRank] = await Promise.all([
+        this.prisma.character.count({
+          where: {
+            isPublic: true,
+            worldId: character.worldId,
+            OR: [
+              { experiencePoints: { gt: character.experiencePoints } },
+              { experiencePoints: character.experiencePoints, id: { lt: characterId } },
+            ],
+          },
+        }),
+        this.prisma.character.count({
+          where: {
+            isPublic: true,
+            worldId: character.worldId,
+            OR: [
+              { heroPoints: { gt: character.heroPoints } },
+              { heroPoints: character.heroPoints, id: { lt: characterId } },
+            ],
+          },
+        }),
+      ]);
+      worldExpRank += 1;
+      worldPhRank += 1;
+    }
+
+    const result = {
+      globalExpRank: globalExpRank + 1,
+      globalPhRank: globalPhRank + 1,
+      worldExpRank,
+      worldPhRank,
+      worldId: character.worldId,
+    };
+
+    this.cache.set(cacheKey, result);
+    return result;
   }
 
   async getById(characterId: string, requesterId?: string, requesterRole?: string) {
@@ -297,6 +470,11 @@ export class CharactersService {
       characterId,
       { expDelta, phDelta, reason },
     );
+
+    this.cache.invalidate("rankings:");
+    this.cache.invalidate(`rank:${characterId}`);
+
+    this.badgesService.checkAndAward(characterId).catch(() => undefined);
 
     return {
       message: "Progres zostal przyznany.",

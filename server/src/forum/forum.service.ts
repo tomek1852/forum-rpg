@@ -5,6 +5,7 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import { NotificationType } from "@prisma/client";
+import { BadgesService } from "../badges/badges.service";
 import { NotificationsService } from "../notifications/notifications.service";
 import { PrismaService } from "../prisma/prisma.service";
 import { CreateCategoryDto } from "./dto/create-category.dto";
@@ -35,6 +36,7 @@ export class ForumService {
     @Inject(PrismaService) private readonly prisma: PrismaService,
     @Inject(NotificationsService)
     private readonly notificationsService: NotificationsService,
+    @Inject(BadgesService) private readonly badgesService: BadgesService,
   ) {}
 
   async listCategories(userRole: string) {
@@ -510,6 +512,8 @@ export class ForumService {
     }
 
     await this.notificationsService.createForUsers([...recipients.values()]);
+
+    this.badgesService.checkAndAwardForUser(authorId).catch(() => undefined);
 
     return {
       post: {

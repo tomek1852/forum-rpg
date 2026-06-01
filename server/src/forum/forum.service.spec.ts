@@ -40,7 +40,8 @@ describe("ForumService", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    service = new ForumService(prisma as never, notificationsService as never);
+    const badgesService = { checkAndAwardForUser: jest.fn().mockResolvedValue(undefined) };
+    service = new ForumService(prisma as never, notificationsService as never, badgesService as never);
   });
 
   it("creates a thread with the opening post", async () => {

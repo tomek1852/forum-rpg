@@ -4,6 +4,66 @@ export type PresenceStatus = "ONLINE" | "AWAY" | "OFFLINE";
 export type StatValueType = "NUMBER" | "TEXT";
 export type SkillProposalStatus = "PENDING" | "APPROVED" | "REJECTED";
 export type EventParticipationStatus = "PENDING" | "APPROVED" | "REJECTED";
+export type BadgeCondition =
+  | "FIRST_POST"
+  | "FIRST_CHARACTER"
+  | "EXP_100"
+  | "EXP_500"
+  | "EXP_1000"
+  | "SKILL_APPROVED"
+  | "EVENT_PARTICIPANT"
+  | "CUSTOM";
+
+export interface Badge {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  condition: BadgeCondition;
+  threshold: number | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CharacterBadge {
+  id: string;
+  awardedAt: string;
+  note: string | null;
+  characterId: string;
+  badgeId: string;
+  awardedById: string | null;
+  badge: Badge;
+  awardedBy: {
+    id: string;
+    username: string;
+    displayName: string | null;
+  } | null;
+}
+
+export interface BadgesResponse {
+  badges: Badge[];
+}
+
+export interface CharacterBadgesResponse {
+  badges: CharacterBadge[];
+}
+
+export interface BadgeMutationResponse {
+  badge: Badge | CharacterBadge;
+}
+
+export interface CreateBadgePayload {
+  name: string;
+  description: string;
+  icon: string;
+  condition: BadgeCondition;
+  threshold?: number;
+}
+
+export interface AwardBadgePayload {
+  badgeId: string;
+  note?: string;
+}
 
 export interface User {
   id: string;
@@ -263,6 +323,7 @@ export interface CharacterRankingEntry {
   position: number;
   characterId: string;
   name: string;
+  avatarUrl: string | null;
   world: Pick<World, "id" | "name" | "slug"> | null;
   experiencePoints: number;
   heroPoints: number;
@@ -270,6 +331,28 @@ export interface CharacterRankingEntry {
 
 export interface CharacterRankingsResponse {
   rankings: CharacterRankingEntry[];
+  nextCursor: string | null;
+}
+
+export interface WorldRankingEntry {
+  worldId: string;
+  name: string;
+  slug: string;
+  activeCharacterCount: number;
+  totalExp: number;
+  lastActivityAt: string | null;
+}
+
+export interface WorldRankingsResponse {
+  worlds: WorldRankingEntry[];
+}
+
+export interface CharacterRankResponse {
+  globalExpRank: number;
+  globalPhRank: number;
+  worldExpRank: number | null;
+  worldPhRank: number | null;
+  worldId: string | null;
 }
 
 export interface ProgressMutationResponse {

@@ -7,9 +7,9 @@ import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { getApiErrorMessage, getCharacter, getCharacterProgress } from "@/lib/api";
+import { getApiErrorMessage, getCharacter, getCharacterBadges, getCharacterProgress, getCharacterRank } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
-import type { CharacterSkill, ProgressEntry, SkillProposal, SkillProposalStatus } from "@/lib/types";
+import type { CharacterBadge, CharacterSkill, ProgressEntry, SkillProposal, SkillProposalStatus } from "@/lib/types";
 import { ProgressGrantForm } from "./progress-grant-form";
 import { SkillProposalForm } from "./skill-proposal-form";
 
@@ -20,6 +20,19 @@ export function CharacterDetailShell({ characterId }: { characterId: string }) {
   const query = useQuery({
     queryKey: ["character", characterId],
     queryFn: () => getCharacter(characterId),
+    enabled: hydrated && Boolean(accessToken),
+  });
+
+  const rankQuery = useQuery({
+    queryKey: ["character-rank", characterId],
+    queryFn: () => getCharacterRank(characterId),
+    enabled: hydrated && Boolean(accessToken) && Boolean(query.data?.character?.isPublic),
+    retry: false,
+  });
+
+  const badgesQuery = useQuery({
+    queryKey: ["character-badges", characterId],
+    queryFn: () => getCharacterBadges(characterId),
     enabled: hydrated && Boolean(accessToken),
   });
 
@@ -93,8 +106,16 @@ export function CharacterDetailShell({ characterId }: { characterId: string }) {
             </div>
             <div className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
-                <ProgressBadge label="EXP" value={character.experiencePoints} />
-                <ProgressBadge label="PH" value={character.heroPoints} />
+                <ProgressBadge
+                  label="EXP"
+                  value={character.experiencePoints}
+                  rank={rankQuery.data?.globalExpRank}
+                />
+                <ProgressBadge
+                  label="PH"
+                  value={character.heroPoints}
+                  rank={rankQuery.data?.globalPhRank}
+                />
               </div>
               <div className="flex gap-3">
                 {isOwner ? (
@@ -242,6 +263,18 @@ export function CharacterDetailShell({ characterId }: { characterId: string }) {
           </Card>
         ) : null}
 
+        <Card>
+          <CardHeader>
+            <CardTitle>Odznaki</CardTitle>
+            <CardDescription>
+              Odznaki zdobyte przez tę postać za osiągnięcia i aktywność.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <BadgesSection badges={badgesQuery.data?.badges ?? []} isLoading={badgesQuery.isLoading} />
+          </CardContent>
+        </Card>
+
         {query.isError ? (
           <p className="text-sm text-[#9d3d2d]">{getApiErrorMessage(query.error)}</p>
         ) : null}
@@ -250,13 +283,18 @@ export function CharacterDetailShell({ characterId }: { characterId: string }) {
   );
 }
 
-function ProgressBadge({ label, value }: { label: string; value: number }) {
+function ProgressBadge({ label, value, rank }: { label: string; value: number; rank?: number }) {
   return (
     <div className="rounded-[24px] border border-[color:var(--border)] bg-white/70 px-5 py-4 text-center">
       <div className="text-xs uppercase tracking-[0.24em] text-[color:var(--foreground-subtle)]">
         {label}
       </div>
       <div className="mt-1 font-display text-3xl text-[color:var(--foreground)]">{value}</div>
+      {rank !== undefined && (
+        <div className="mt-1 text-xs font-semibold text-[color:var(--accent-strong)]">
+          #{rank} w rankingu
+        </div>
+      )}
     </div>
   );
 }
@@ -388,6 +426,50 @@ function formatProposalStatus(status: SkillProposalStatus) {
     default:
       return "Oczekuje";
   }
+}
+
+function BadgesSection({
+  badges,
+  isLoading,
+}: {
+  badges: CharacterBadge[];
+  isLoading: boolean;
+}) {
+  if (isLoading) {
+    return <p className="text-sm text-[color:var(--foreground-muted)]">Ładowanie odznak...</p>;
+  }
+
+  if (badges.length === 0) {
+    return (
+      <p className="text-sm text-[color:var(--foreground-muted)]">
+        Ta postać nie zdobyła jeszcze żadnych odznak.
+      </p>
+    );
+  }
+
+  return (
+    <div className="flex flex-wrap gap-3">
+      {badges.map((cb) => (
+        <div
+          key={cb.id}
+          className="group relative flex flex-col items-center gap-1"
+          title={`${cb.badge.name}: ${cb.badge.description}`}
+        >
+          <span className="flex h-12 w-12 items-center justify-center rounded-full bg-[color:var(--surface)] text-2xl ring-2 ring-[color:var(--border)]">
+            {cb.badge.icon}
+          </span>
+          <span className="max-w-[72px] truncate text-center text-xs text-[color:var(--foreground-subtle)]">
+            {cb.badge.name}
+          </span>
+          <div className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 hidden w-48 -translate-x-1/2 rounded-[16px] bg-[color:var(--foreground)] p-3 text-xs text-[color:var(--background)] shadow-lg group-hover:block">
+            <p className="font-semibold">{cb.badge.name}</p>
+            <p className="mt-1 opacity-80">{cb.badge.description}</p>
+            {cb.note && <p className="mt-1 italic opacity-70">{cb.note}</p>}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 function PageSkeleton() {

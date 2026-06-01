@@ -1,5 +1,6 @@
 import { Inject, Injectable, NotFoundException } from "@nestjs/common";
 import { ModerationReportStatus, ModerationReportTargetType, NotificationType } from "@prisma/client";
+import { ActivityLogService } from "../activity-log/activity-log.service";
 import { NotificationsService } from "../notifications/notifications.service";
 import { PrismaService } from "../prisma/prisma.service";
 import { CreateReportDto } from "./dto/create-report.dto";
@@ -15,6 +16,7 @@ export class ModerationService {
   constructor(
     @Inject(PrismaService) private readonly prisma: PrismaService,
     @Inject(NotificationsService) private readonly notificationsService: NotificationsService,
+    @Inject(ActivityLogService) private readonly activityLog: ActivityLogService,
   ) {}
 
   async createReport(reporterId: string, dto: CreateReportDto) {
@@ -88,6 +90,19 @@ export class ModerationService {
         },
       ]);
     }
+
+    const action =
+      dto.status === ModerationReportStatus.RESOLVED
+        ? "moderation.resolve_report"
+        : dto.status === ModerationReportStatus.DISMISSED
+          ? "moderation.dismiss_report"
+          : "moderation.update_report";
+
+    await this.activityLog.log(reviewerId, action, "moderation_report", id, {
+      status: dto.status,
+      targetType: report.targetType,
+      targetId: report.targetId,
+    });
 
     return { message: "Status zgłoszenia został zaktualizowany.", report };
   }

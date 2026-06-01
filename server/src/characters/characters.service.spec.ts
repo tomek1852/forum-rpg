@@ -22,11 +22,13 @@ describe("CharactersService", () => {
     },
   };
 
+  const activityLog = { log: jest.fn() };
+
   let service: CharactersService;
 
   beforeEach(() => {
     jest.clearAllMocks();
-    service = new CharactersService(prisma as never);
+    service = new CharactersService(prisma as never, activityLog as never);
   });
 
   it("creates a character for the owner", async () => {

@@ -707,3 +707,35 @@ export interface UpdateAccountStatusPayload {
 export interface UpdateUserRolePayload {
   role: Role;
 }
+
+export interface ActivityLogActor {
+  id: string;
+  username: string;
+  displayName: string | null;
+}
+
+export interface ActivityLogEntry {
+  id: string;
+  actorId: string;
+  action: string;
+  targetType: string | null;
+  targetId: string | null;
+  meta: Record<string, unknown> | null;
+  createdAt: string;
+  actor: ActivityLogActor;
+}
+
+export interface ActivityLogResponse {
+  entries: ActivityLogEntry[];
+  nextCursor: string | null;
+}
+
+export interface ActivityLogQueryParams {
+  cursor?: string;
+  limit?: number;
+  actorId?: string;
+  action?: string;
+  targetType?: string;
+  from?: string;
+  to?: string;
+}

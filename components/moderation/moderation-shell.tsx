@@ -14,6 +14,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import {
+  getActivityLog,
   getApiErrorMessage,
   getCurrentUser,
   getModerationAccounts,
@@ -26,6 +27,7 @@ import { useAuthStore } from "@/lib/auth-store";
 import { PresenceBadge } from "@/components/presence-badge";
 import type {
   AccountStatus,
+  ActivityLogEntry,
   ModerationReport,
   ModerationReportStatus,
   ModerationReportTargetType,
@@ -43,7 +45,19 @@ const REPORT_STATUS_OPTIONS: Array<{ value: ModerationReportStatus | ""; label: 
   { value: "DISMISSED", label: "Odrzucone" },
 ];
 
-type Tab = "accounts" | "reports";
+const ACTION_FILTER_OPTIONS = [
+  { value: "", label: "Wszystkie" },
+  { value: "user.block", label: "Blokada konta" },
+  { value: "user.activate", label: "Aktywacja konta" },
+  { value: "user.change_role", label: "Zmiana roli" },
+  { value: "character.approve_skill", label: "Zatwierdzenie umiejętności" },
+  { value: "character.reject_skill", label: "Odrzucenie umiejętności" },
+  { value: "moderation.resolve_report", label: "Rozpatrzone zgłoszenie" },
+  { value: "moderation.dismiss_report", label: "Odrzucone zgłoszenie" },
+  { value: "character.grant_progress", label: "Przyznanie EXP/PH" },
+];
+
+type Tab = "accounts" | "reports" | "activity-log";
 
 export function ModerationShell() {
   const router = useRouter();
@@ -53,6 +67,8 @@ export function ModerationShell() {
   );
   const [activeTab, setActiveTab] = useState<Tab>("accounts");
   const [reportStatusFilter, setReportStatusFilter] = useState<ModerationReportStatus | "">("");
+  const [activityActionFilter, setActivityActionFilter] = useState("");
+  const [activityCursor, setActivityCursor] = useState<string | undefined>(undefined);
 
   const currentUserQuery = useQuery({
     queryKey: ["current-user"],
@@ -77,6 +93,17 @@ export function ModerationShell() {
         reportStatusFilter ? { status: reportStatusFilter } : undefined,
       ),
     enabled: hydrated && Boolean(accessToken) && canModerate && activeTab === "reports",
+  });
+
+  const activityLogQuery = useQuery({
+    queryKey: ["activity-log", activityActionFilter, activityCursor],
+    queryFn: () =>
+      getActivityLog({
+        action: activityActionFilter || undefined,
+        cursor: activityCursor,
+        limit: 20,
+      }),
+    enabled: hydrated && Boolean(accessToken) && isAdmin && activeTab === "activity-log",
   });
 
   useEffect(() => {
@@ -220,9 +247,121 @@ export function ModerationShell() {
           >
             Zgłoszenia
           </button>
+          {isAdmin ? (
+            <button
+              type="button"
+              className={`px-4 py-2 text-sm font-medium transition-colors ${
+                activeTab === "activity-log"
+                  ? "border-b-2 border-[color:var(--foreground)] text-[color:var(--foreground)]"
+                  : "text-[color:var(--foreground-muted)] hover:text-[color:var(--foreground)]"
+              }`}
+              onClick={() => setActiveTab("activity-log")}
+            >
+              Log aktywności
+            </button>
+          ) : null}
         </div>
 
-        {activeTab === "accounts" ? (
+        {activeTab === "activity-log" && isAdmin ? (
+          <section className="space-y-4">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h2 className="font-display text-3xl text-[color:var(--foreground)]">
+                  Log aktywności
+                </h2>
+                <p className="mt-2 text-sm leading-7 text-[color:var(--foreground-muted)]">
+                  Historia akcji moderatorów i administratorów w systemie.
+                </p>
+              </div>
+              <select
+                className="rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm focus:outline-none"
+                value={activityActionFilter}
+                onChange={(e) => {
+                  setActivityActionFilter(e.target.value);
+                  setActivityCursor(undefined);
+                }}
+              >
+                {ACTION_FILTER_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {activityLogQuery.isError ? (
+              <p className="text-sm text-[#9d3d2d]">
+                {getApiErrorMessage(activityLogQuery.error)}
+              </p>
+            ) : null}
+
+            {activityLogQuery.isLoading ? (
+              <div className="animate-pulse space-y-2">
+                {[...Array(5)].map((_, i) => (
+                  <div key={i} className="h-12 rounded-xl bg-[color:var(--surface-strong)]" />
+                ))}
+              </div>
+            ) : (activityLogQuery.data?.entries ?? []).length > 0 ? (
+              <>
+                <div className="overflow-x-auto rounded-[20px] border border-[color:var(--border)]">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-[color:var(--border)] bg-[color:var(--surface-strong)]">
+                        <th className="px-4 py-3 text-left font-medium text-[color:var(--foreground-muted)]">
+                          Czas
+                        </th>
+                        <th className="px-4 py-3 text-left font-medium text-[color:var(--foreground-muted)]">
+                          Aktor
+                        </th>
+                        <th className="px-4 py-3 text-left font-medium text-[color:var(--foreground-muted)]">
+                          Akcja
+                        </th>
+                        <th className="px-4 py-3 text-left font-medium text-[color:var(--foreground-muted)]">
+                          Cel
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-[color:var(--border)]">
+                      {(activityLogQuery.data?.entries ?? []).map((entry) => (
+                        <ActivityLogRow entry={entry} key={entry.id} />
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <div className="flex gap-3">
+                  {activityCursor ? (
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => setActivityCursor(undefined)}
+                    >
+                      Pierwsza strona
+                    </Button>
+                  ) : null}
+                  {activityLogQuery.data?.nextCursor ? (
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      onClick={() =>
+                        setActivityCursor(activityLogQuery.data?.nextCursor ?? undefined)
+                      }
+                    >
+                      Następna strona
+                    </Button>
+                  ) : null}
+                </div>
+              </>
+            ) : (
+              <Card>
+                <CardContent className="py-10 text-sm leading-7 text-[color:var(--foreground-muted)]">
+                  Brak wpisów w logu aktywności.
+                </CardContent>
+              </Card>
+            )}
+          </section>
+        ) : activeTab === "accounts" ? (
           <>
             <section className="grid gap-6 lg:grid-cols-3">
               <SummaryCard
@@ -371,6 +510,53 @@ export function ModerationShell() {
       </div>
     </div>
   );
+}
+
+function ActivityLogRow({ entry }: { entry: ActivityLogEntry }) {
+  return (
+    <tr className="bg-[color:var(--surface)] transition-colors hover:bg-[color:var(--surface-strong)]">
+      <td className="whitespace-nowrap px-4 py-3 text-xs text-[color:var(--foreground-muted)]">
+        {formatDate(entry.createdAt)}
+      </td>
+      <td className="px-4 py-3">
+        <Link
+          href={`/profile/${entry.actorId}`}
+          className="font-medium underline underline-offset-2"
+        >
+          {entry.actor.displayName ?? entry.actor.username}
+        </Link>
+      </td>
+      <td className="px-4 py-3">
+        <Badge>{formatAction(entry.action)}</Badge>
+      </td>
+      <td className="px-4 py-3 text-xs text-[color:var(--foreground-muted)]">
+        {entry.targetType && entry.targetId ? (
+          <span>
+            <span className="font-medium">{entry.targetType}</span>{" "}
+            <code className="text-xs">{entry.targetId.slice(0, 8)}…</code>
+          </span>
+        ) : (
+          "—"
+        )}
+      </td>
+    </tr>
+  );
+}
+
+function formatAction(action: string) {
+  const labels: Record<string, string> = {
+    "user.block": "Blokada konta",
+    "user.activate": "Aktywacja konta",
+    "user.set_pending": "Ustaw oczekujące",
+    "user.change_role": "Zmiana roli",
+    "character.approve_skill": "Zatw. umiejętność",
+    "character.reject_skill": "Odrzuc. umiejętność",
+    "moderation.resolve_report": "Rozpatrzono zgłoszenie",
+    "moderation.dismiss_report": "Odrzucono zgłoszenie",
+    "moderation.update_report": "Aktualizacja zgłoszenia",
+    "character.grant_progress": "Przyznanie EXP/PH",
+  };
+  return labels[action] ?? action;
 }
 
 function ReportCard({

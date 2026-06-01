@@ -27,11 +27,13 @@ describe("SkillsService", () => {
     createForUsers: jest.fn(),
   };
 
+  const activityLog = { log: jest.fn() };
+
   let service: SkillsService;
 
   beforeEach(() => {
     jest.clearAllMocks();
-    service = new SkillsService(prisma as never, notificationsService as never);
+    service = new SkillsService(prisma as never, notificationsService as never, activityLog as never);
   });
 
   it("creates a skill proposal for the character owner", async () => {

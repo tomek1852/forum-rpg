@@ -13,6 +13,7 @@ const config = {
     "<rootDir>/node_modules/",
     "<rootDir>/server/",
     "<rootDir>/e2e/",
+    "<rootDir>/.claude/",
   ],
 };
 

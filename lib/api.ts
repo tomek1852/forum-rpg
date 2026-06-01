@@ -4,6 +4,8 @@ import axios from "axios";
 import { useAuthStore } from "./auth-store";
 import type {
   AccountStatus,
+  ActivityLogQueryParams,
+  ActivityLogResponse,
   AddProgressPayload,
   CreateModerationReportPayload,
   ModerationReportMutationResponse,
@@ -527,6 +529,13 @@ export async function updateModerationReport(
     `/moderation/reports/${id}`,
     payload,
   );
+  return data;
+}
+
+export async function getActivityLog(params?: ActivityLogQueryParams) {
+  const { data } = await api.get<ActivityLogResponse>("/admin/activity-log", {
+    params,
+  });
   return data;
 }
 

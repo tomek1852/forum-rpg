@@ -1,5 +1,6 @@
 import { Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
+import { ActivityLogModule } from "./activity-log/activity-log.module";
 import { AuthModule } from "./auth/auth.module";
 import { CharactersModule } from "./characters/characters.module";
 import { EventsModule } from "./events/events.module";
@@ -21,6 +22,7 @@ import { WorldsModule } from "./worlds/worlds.module";
       envFilePath: [".env.local", ".env"],
     }),
     PrismaModule,
+    ActivityLogModule,
     MailerModule,
     MessagesModule,
     UsersModule,

@@ -100,6 +100,7 @@ model User {
   createdWorldLogs    WorldLog[]           @relation("WorldLogAuthor")
   reportsFiled        ModerationReport[]   @relation("ModerationReportReporter")
   reportsResolved     ModerationReport[]   @relation("ModerationReportResolver")
+  activityLogs        ActivityLog[]        @relation("ActivityLogActor")
 }
 
 model World {
@@ -444,6 +445,21 @@ model PrivateMessage {
   @@index([conversationId, createdAt])
   @@index([conversationId, readAt])
   @@index([senderId, createdAt])
+}
+
+model ActivityLog {
+  id         String   @id @default(uuid())
+  actorId    String
+  action     String
+  targetType String?
+  targetId   String?
+  meta       Json?
+  createdAt  DateTime @default(now())
+  actor      User     @relation("ActivityLogActor", fields: [actorId], references: [id], onDelete: Cascade)
+
+  @@index([actorId, createdAt])
+  @@index([action, createdAt])
+  @@index([targetType, targetId])
 }
 
 model ModerationReport {

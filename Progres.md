@@ -155,6 +155,20 @@
 - Zaktualizowano `lib/types.ts` o typy `ModerationReport`, `ModerationReportStatus`, `ModerationReportTargetType` oraz payloady; `lib/api.ts` dostał funkcje `createModerationReport`, `getModerationReports`, `getModerationReport`, `updateModerationReport`.
 - Zweryfikowano iterację poleceniami: `npm --prefix server run prisma:generate`, `npm --prefix server run test` (49/49), `npm --prefix server run build`, `npm run lint`, `npm run build:web`.
 
+## 2026-05-31 - ActivityLog — log aktywności moderatorów - DONE
+
+- Dodano model `ActivityLog` do `schema.prisma` (pola: id, actorId FK User, action, targetType?, targetId?, meta Json?, createdAt) oraz ręczną migrację SQL `202604_activity_log`.
+- Zaimplementowano backendowy moduł `activity-log` w NestJS z `ActivityLogService.log()` (tworzy wpis) i `ActivityLogService.list()` (paginacja cursor-based z filtrami actorId, action, targetType, zakres dat).
+- Dodano endpoint `GET /admin/activity-log` dostępny tylko dla roli `ADMIN` (JwtAuthGuard + RolesGuard).
+- Podpięto logowanie w istniejących serwisach: blokada/aktywacja/oczekujące konta i zmiana roli (`UsersService`), zatwierdzenie/odrzucenie umiejętności (`SkillsService`), zmiana statusu ModerationReport (`ModerationService`), przyznanie EXP/PH (`CharactersService`).
+- Każdy z modułów (UsersModule, SkillsModule, ModerationModule, CharactersModule) importuje `ActivityLogModule` i wstrzykuje `ActivityLogService`.
+- Dodano 5 testów backendowych w `activity-log.service.spec.ts`: log przy blokadzie konta, log przy zmianie statusu ModerationReport, RolesGuard odrzuca GM przy `/admin/activity-log`, paginacja cursor-based z nextCursor i bez.
+- Zaktualizowano istniejące speki (users, moderation, skills, characters) o mock `ActivityLogService` — wszystkie 54 testy przechodzą.
+- Na frontendzie dodano zakładkę "Log aktywności" w panelu `/moderation`, widoczną tylko dla roli `ADMIN`, z tabelą (czas, aktor, akcja, cel), filtrem akcji (select) i paginacją przyciskami.
+- Dodano typy `ActivityLogEntry`, `ActivityLogActor`, `ActivityLogResponse`, `ActivityLogQueryParams` do `lib/types.ts` oraz funkcję `getActivityLog()` do `lib/api.ts`.
+- Naprawiono `jest.config.mjs` — dodano `<rootDir>/.claude/` do `testPathIgnorePatterns` (worktree z poprzedniej sesji powodował fałszywe błędy w `test:web`).
+- Zweryfikowano iterację poleceniami: `npm --prefix server run prisma:generate --no-engine`, `npm --prefix server run test` (54/54), `npm --prefix server run build`, `npm run lint`, `npm run test:web` (4/4), `npm run build:web`.
+
 ## 2026-05-10 - ETAP 3 - WorldLog MVP - IN PROGRESS
 
 - Dodano model `WorldLog` wraz z migracja Prisma oraz relacjami do `World` i autora wpisu `User`.

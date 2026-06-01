@@ -16,11 +16,13 @@ describe("ModerationService", () => {
     },
   };
 
+  const activityLog = { log: jest.fn() };
+
   let service: ModerationService;
 
   beforeEach(() => {
     jest.clearAllMocks();
-    service = new ModerationService(prisma as never, notificationsService as never);
+    service = new ModerationService(prisma as never, notificationsService as never, activityLog as never);
   });
 
   it("gracz może zgłosić post", async () => {

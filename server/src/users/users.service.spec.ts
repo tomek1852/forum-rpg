@@ -17,11 +17,13 @@ describe("UsersService", () => {
     },
   };
 
+  const activityLog = { log: jest.fn() };
+
   let service: UsersService;
 
   beforeEach(() => {
     jest.clearAllMocks();
-    service = new UsersService(prisma as never);
+    service = new UsersService(prisma as never, activityLog as never);
   });
 
   it("lists moderation accounts ordered by status and creation date", async () => {

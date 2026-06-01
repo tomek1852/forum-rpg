@@ -6,6 +6,7 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import { AccountStatus, Prisma, User, UserRole } from "@prisma/client";
+import { ActivityLogService } from "../activity-log/activity-log.service";
 import { PrismaService } from "../prisma/prisma.service";
 import { UpdateProfileDto } from "./dto/update-profile.dto";
 
@@ -36,7 +37,10 @@ const messageRecipientSelect = {
 
 @Injectable()
 export class UsersService {
-  constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
+  constructor(
+    @Inject(PrismaService) private readonly prisma: PrismaService,
+    @Inject(ActivityLogService) private readonly activityLog: ActivityLogService,
+  ) {}
 
   async createUser(data: Prisma.UserCreateInput) {
     return this.prisma.user.create({ data });
@@ -187,6 +191,15 @@ export class UsersService {
       data: { status },
     });
 
+    const action =
+      status === AccountStatus.BLOCKED
+        ? "user.block"
+        : status === AccountStatus.ACTIVE
+          ? "user.activate"
+          : "user.set_pending";
+
+    await this.activityLog.log(actor.userId, action, "user", userId, { status });
+
     return {
       message: "Status konta zostal zaktualizowany.",
       user: this.toPublicUser(updatedUser),
@@ -214,6 +227,8 @@ export class UsersService {
       where: { id: userId },
       data: { role },
     });
+
+    await this.activityLog.log(actor.userId, "user.change_role", "user", userId, { role });
 
     return {
       message: "Rola uzytkownika zostala zaktualizowana.",

@@ -11,6 +11,7 @@ import {
   SkillProposalStatus,
   UserRole,
 } from "@prisma/client";
+import { ActivityLogService } from "../activity-log/activity-log.service";
 import { NotificationsService } from "../notifications/notifications.service";
 import { PrismaService } from "../prisma/prisma.service";
 import { CreateSkillProposalDto } from "./dto/create-skill-proposal.dto";
@@ -47,6 +48,8 @@ export class SkillsService {
     @Inject(PrismaService) private readonly prisma: PrismaService,
     @Inject(NotificationsService)
     private readonly notificationsService: NotificationsService,
+    @Inject(ActivityLogService)
+    private readonly activityLog: ActivityLogService,
   ) {}
 
   async createProposal(userId: string, dto: CreateSkillProposalDto) {
@@ -217,6 +220,16 @@ export class SkillsService {
         link: `/character/${proposal.characterId}`,
       },
     ]);
+
+    const action =
+      dto.status === SkillProposalStatus.APPROVED
+        ? "character.approve_skill"
+        : "character.reject_skill";
+
+    await this.activityLog.log(reviewer.userId, action, "skill_proposal", proposal.id, {
+      skillName: proposal.name,
+      characterId: proposal.characterId,
+    });
 
     return {
       message:

@@ -6,6 +6,7 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import { Character, Prisma, SkillProposalStatus, StatValueType } from "@prisma/client";
+import { ActivityLogService } from "../activity-log/activity-log.service";
 import { PrismaService } from "../prisma/prisma.service";
 import { AddProgressDto } from "./dto/add-progress.dto";
 import { CharacterRankingQueryDto } from "./dto/character-ranking-query.dto";
@@ -63,7 +64,10 @@ const progressEntryInclude = {
 
 @Injectable()
 export class CharactersService {
-  constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
+  constructor(
+    @Inject(PrismaService) private readonly prisma: PrismaService,
+    @Inject(ActivityLogService) private readonly activityLog: ActivityLogService,
+  ) {}
 
   async create(ownerId: string, dto: CreateCharacterDto) {
     const preparedStats = await this.prepareStatValues(dto.worldId, dto.statValues);
@@ -285,6 +289,14 @@ export class CharactersService {
 
       return { entry, character: updatedCharacter };
     });
+
+    await this.activityLog.log(
+      grantor.userId,
+      "character.grant_progress",
+      "character",
+      characterId,
+      { expDelta, phDelta, reason },
+    );
 
     return {
       message: "Progres zostal przyznany.",

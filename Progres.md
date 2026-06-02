@@ -239,6 +239,42 @@
 - Dodano funkcje `getBadges`, `getCharacterBadges`, `createBadge`, `awardBadge`, `removeBadge` do `lib/api.ts`.
 - Zweryfikowano poleceniami: `npm --prefix server run test` (76/76), `npm --prefix server run build`, `npm run lint`, `npm run test:web` (4/4), `npm run build:web`.
 
+## 2026-06-01 - ETAP 5 — Dokumentacja świata i pomysły — DONE
+
+- Dodano enumeracje `MediaType` (IMAGE | PDF | MAP) i `IdeaStatus` (OPEN | UNDER_REVIEW | ACCEPTED | REJECTED) do `schema.prisma`.
+- Dodano modele `DocCategory`, `DocPage`, `MediaAsset` i `Idea` z relacjami do `User` i `World` oraz ręczną migrację SQL `202605_docs_media`.
+- Uruchomiono `prisma generate --no-engine` — typy klienta zaktualizowane.
+- Zaimplementowano backendowy moduł `docs` w NestJS: `GET /docs/categories` (filtr `worldId`, PLAYER widzi tylko `isPublic=true`), `GET /docs/categories/:id/pages` (gracz blokowany dla prywatnych), `GET /docs/pages/:id`, `POST /docs/categories`, `PATCH /docs/categories/:id`, `POST /docs/pages`, `PATCH /docs/pages/:id` (GM/ADMIN), `POST /docs/media` i `GET /docs/media` (GM/ADMIN) — zapis URL bez file upload.
+- Zaimplementowano backendowy moduł `ideas` w NestJS: `POST /ideas` (każdy zalogowany gracz), `GET /ideas` (gracz widzi własne + OPEN; GM/ADMIN widzi wszystkie; filtr `status`), `PATCH /ideas/:id/status` (GM/ADMIN + opcjonalna `gmNote`).
+- Dodano testy backendowe `docs.service.spec.ts` (gracz nie widzi prywatnych kategorii, GM widzi wszystkie, tworzenie strony, walidacja NotFoundException) i `ideas.service.spec.ts` (gracz zgłasza pomysł, gracz widzi własne + OPEN, GM widzi wszystkie, GM zmienia status na ACCEPTED z notatką) — 88 testów, wszystkie zielone.
+- Na frontendzie dodano widok `/docs`: boczny panel z listą kategorii, nawigacja do stron i renderowanie treści przez `react-markdown`.
+- Na frontendzie dodano widok `/ideas`: formularz zgłoszenia z walidacją (Zod + react-hook-form), lista z filtrem statusu, GM/ADMIN widzi przyciski zmiany statusu i pole notatki.
+- Panel `/mg` (`WorldManagementShell`) dostał sekcję "Dokumentacja" (formularz tworzenia kategorii + strony) i "Media" (dodawanie zasobu przez URL + lista zasobów z filtrem świata).
+- Dashboard dostał skróty do `/docs` i `/ideas`.
+- Zaktualizowano `lib/types.ts` o typy `MediaType`, `IdeaStatus`, `DocCategory`, `DocPage`, `MediaAsset`, `Idea` oraz payloady i response-interfaces.
+- Zaktualizowano `lib/api.ts` o funkcje `getDocCategories`, `getDocCategoryPages`, `getDocPage`, `createDocCategory`, `updateDocCategory`, `createDocPage`, `updateDocPage`, `getMediaAssets`, `createMediaAsset`, `getIdeas`, `createIdea`, `updateIdeaStatus`.
+- Zweryfikowano poleceniami: `npm --prefix server run test` (88/88), `npm --prefix server run build`, `npm run lint`, `npm run test:web` (4/4), `npm run build:web`.
+
+## 2026-06-01 - ETAP 5 — Silnik walki (Combat Engine) — DONE
+
+- Dodano trzy enumeracje do `schema.prisma`: `CombatStatus` (PREPARING|ACTIVE|FINISHED|CANCELLED), `CombatActionType` (ATTACK|DEFEND|SKILL|ITEM|PASS), `CharacterConditionType` (POISONED|STUNNED|BURNING|BLESSED|CURSED|CUSTOM).
+- Dodano modele: `CombatEncounter` (id, worldId, title, status, roundNumber, gmId, timestamps), `CombatParticipant` (encounterId, characterId, initiative?, hp, maxHp, isAlive, turnOrder?, joinedAt), `CombatAction` (encounterId, roundNumber, actorId, actionType, targetId?, description?, rollResult?, damage?), `CombatEffect` (participantId, name, description?, duration, appliedAt, sourceActionId?), `CharacterCondition` (characterId, condition, label?, encounterId?, appliedAt).
+- Stworzono ręczną migrację SQL `202606_combat_engine` z tabelami, indeksami i kluczami obcymi.
+- Rozszerzono modele `Character`, `World`, `User` o odpowiednie relacje do nowych tabel.
+- Zaimplementowano backendowy moduł `combat` w NestJS (`CombatModule`, `CombatController`, `CombatService`).
+  - `POST /combat` (GM/ADMIN): tworzy starcie, wyznacza maxHp z `CharacterStatValue` dla kluczy hp/HP/zdrowie, fallback 100.
+  - `POST /combat/:id/initiative` (GM/ADMIN): ustawia inicjatywę uczestników i automatycznie oblicza `turnOrder` (malejąco).
+  - `POST /combat/:id/start` (GM/ADMIN): PREPARING → ACTIVE, roundNumber = 1.
+  - `GET /combat`: lista starć z filtrem `worldId` i `status`.
+  - `GET /combat/:id`: szczegóły z uczestnikami i efektami.
+- Dodano testy backendowe `combat.service.spec.ts`: tworzenie starcia, maxHp z CharacterStatValue, fallback 100, walidacja start (status, forbidden), ForbiddenException dla nie-GM.
+- Na frontendzie dodano widoki `/combat` (lista starć) i `/combat/new` (formularz GM: tytuł, świat, wybór postaci po UUID) oraz `/combat/[id]` (szczegóły: uczestnicy, HP, inicjatywa, efekty, przyciski GM).
+- Dodano skróty do `/combat` w dashboardzie oraz skróty `/combat` i `/combat/new` w panelu `/mg`.
+- Zaktualizowano `lib/types.ts` o typy `CombatStatus`, `CombatActionType`, `CombatParticipant`, `CombatEffect`, `CombatEncounter`, `CombatEncounterSummary` i payloady.
+- Zaktualizowano `lib/api.ts` o funkcje `getCombatEncounters`, `getCombatEncounter`, `createCombatEncounter`, `setCombatInitiative`, `startCombatEncounter`.
+- Wygenerowano Prisma Client poleceniem `npm --prefix server run prisma:generate`.
+- Zweryfikowano poleceniami: `npm --prefix server run test` (95/95), `npm --prefix server run build`, `npm run lint`, `npm run build:web`.
+
 ## 2026-05-10 - ETAP 3 - WorldLog MVP - IN PROGRESS
 
 - Dodano model `WorldLog` wraz z migracja Prisma oraz relacjami do `World` i autora wpisu `User`.

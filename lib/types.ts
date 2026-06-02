@@ -1,4 +1,6 @@
 export type Role = "PLAYER" | "GM" | "ADMIN";
+export type MediaType = "IMAGE" | "PDF" | "MAP";
+export type IdeaStatus = "OPEN" | "UNDER_REVIEW" | "ACCEPTED" | "REJECTED";
 export type AccountStatus = "PENDING_APPROVAL" | "ACTIVE" | "BLOCKED";
 export type PresenceStatus = "ONLINE" | "AWAY" | "OFFLINE";
 export type StatValueType = "NUMBER" | "TEXT";
@@ -874,4 +876,213 @@ export interface AdminStatsResponse {
 
 export interface AdminUserActivityResponse {
   entries: ActivityLogEntry[];
+}
+
+// Docs & Media
+
+export interface DocCategoryAuthor {
+  id: string;
+  username: string;
+  displayName: string | null;
+}
+
+export interface DocCategory {
+  id: string;
+  name: string;
+  description: string | null;
+  worldId: string | null;
+  sortOrder: number;
+  isPublic: boolean;
+  createdAt: string;
+  createdById: string | null;
+  createdBy: DocCategoryAuthor | null;
+}
+
+export interface DocPage {
+  id: string;
+  title: string;
+  content: string;
+  categoryId: string;
+  authorId: string;
+  isPublished: boolean;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+  author: DocCategoryAuthor;
+  category: { id: string; name: string };
+}
+
+export interface MediaAsset {
+  id: string;
+  name: string;
+  url: string;
+  type: MediaType;
+  uploadedById: string;
+  worldId: string | null;
+  createdAt: string;
+  uploadedBy: DocCategoryAuthor;
+}
+
+export interface DocCategoriesResponse {
+  categories: DocCategory[];
+}
+
+export interface DocCategoryPagesResponse {
+  category: DocCategory;
+  pages: DocPage[];
+}
+
+export interface DocPageResponse {
+  page: DocPage & { category: DocCategory };
+}
+
+export interface MediaAssetsResponse {
+  assets: MediaAsset[];
+}
+
+export interface MediaAssetResponse {
+  asset: MediaAsset;
+}
+
+export interface CreateDocCategoryPayload {
+  name: string;
+  description?: string;
+  worldId?: string;
+  sortOrder?: number;
+  isPublic?: boolean;
+}
+
+export interface UpdateDocCategoryPayload {
+  name?: string;
+  description?: string;
+  worldId?: string;
+  sortOrder?: number;
+  isPublic?: boolean;
+}
+
+export interface CreateDocPagePayload {
+  title: string;
+  content: string;
+  categoryId: string;
+  isPublished?: boolean;
+  sortOrder?: number;
+}
+
+export interface UpdateDocPagePayload {
+  title?: string;
+  content?: string;
+  isPublished?: boolean;
+  sortOrder?: number;
+}
+
+export interface CreateMediaAssetPayload {
+  name: string;
+  url: string;
+  type: MediaType;
+  worldId?: string;
+}
+
+// Ideas
+
+export interface Idea {
+  id: string;
+  title: string;
+  content: string;
+  authorId: string;
+  status: IdeaStatus;
+  category: string | null;
+  gmNote: string | null;
+  createdAt: string;
+  updatedAt: string;
+  author: DocCategoryAuthor;
+}
+
+export interface IdeasResponse {
+  ideas: Idea[];
+}
+
+export interface IdeaResponse {
+  idea: Idea;
+}
+
+export interface CreateIdeaPayload {
+  title: string;
+  content: string;
+  category?: string;
+}
+
+export interface UpdateIdeaStatusPayload {
+  status: IdeaStatus;
+  gmNote?: string;
+}
+
+// Combat
+
+export type CombatStatus = "PREPARING" | "ACTIVE" | "FINISHED" | "CANCELLED";
+export type CombatActionType = "ATTACK" | "DEFEND" | "SKILL" | "ITEM" | "PASS";
+
+export interface CombatCharacterRef {
+  id: string;
+  name: string;
+  avatarUrl: string | null;
+  ownerId: string;
+}
+
+export interface CombatEffect {
+  id: string;
+  participantId: string;
+  name: string;
+  description: string | null;
+  duration: number;
+  appliedAt: number;
+  sourceActionId: string | null;
+}
+
+export interface CombatParticipant {
+  id: string;
+  encounterId: string;
+  characterId: string;
+  initiative: number | null;
+  hp: number;
+  maxHp: number;
+  isAlive: boolean;
+  turnOrder: number | null;
+  joinedAt: string;
+  character: CombatCharacterRef;
+  effects: CombatEffect[];
+}
+
+export interface CombatEncounterSummary {
+  id: string;
+  worldId: string;
+  title: string;
+  status: CombatStatus;
+  roundNumber: number;
+  gmId: string;
+  createdAt: string;
+  updatedAt: string;
+  gm: { id: string; username: string; displayName: string | null };
+  _count: { participants: number };
+}
+
+export interface CombatEncounter extends Omit<CombatEncounterSummary, "_count"> {
+  participants: CombatParticipant[];
+}
+
+export interface CombatEncountersResponse {
+  encounters: CombatEncounterSummary[];
+}
+
+export interface CombatEncounterResponse {
+  encounter: CombatEncounter;
+}
+
+export interface CreateCombatPayload {
+  title: string;
+  worldId: string;
+  characterIds: string[];
+}
+
+export interface SetInitiativePayload {
+  entries: Array<{ characterId: string; initiative: number }>;
 }

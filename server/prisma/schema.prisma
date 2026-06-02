@@ -3,8 +3,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider          = "postgresql"
+  url               = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
 }
 
 enum UserRole {
@@ -77,6 +78,43 @@ enum PresenceStatus {
   OFFLINE
 }
 
+enum MediaType {
+  IMAGE
+  PDF
+  MAP
+}
+
+enum IdeaStatus {
+  OPEN
+  UNDER_REVIEW
+  ACCEPTED
+  REJECTED
+}
+
+enum CombatStatus {
+  PREPARING
+  ACTIVE
+  FINISHED
+  CANCELLED
+}
+
+enum CombatActionType {
+  ATTACK
+  DEFEND
+  SKILL
+  ITEM
+  PASS
+}
+
+enum CharacterConditionType {
+  POISONED
+  STUNNED
+  BURNING
+  BLESSED
+  CURSED
+  CUSTOM
+}
+
 model User {
   id                  String               @id @default(uuid())
   email               String               @unique
@@ -115,6 +153,11 @@ model User {
   reportsResolved     ModerationReport[]   @relation("ModerationReportResolver")
   activityLogs        ActivityLog[]        @relation("ActivityLogActor")
   createdForumCategories ForumCategory[]   @relation("ForumCategoryCreator")
+  createdDocCategories   DocCategory[]     @relation("DocCategoryCreator")
+  authoredDocPages       DocPage[]         @relation("DocPageAuthor")
+  uploadedMediaAssets    MediaAsset[]      @relation("MediaAssetUploader")
+  ideas                  Idea[]            @relation("IdeaAuthor")
+  gmEncounters           CombatEncounter[] @relation("CombatEncounterGM")
 }
 
 model World {
@@ -129,6 +172,9 @@ model World {
   characters      Character[]
   statDefinitions StatDefinition[]
   worldLogs       WorldLog[]
+  docCategories   DocCategory[]
+  mediaAssets     MediaAsset[]
+  combatEncounters CombatEncounter[]
 }
 
 model WorldLog {
@@ -206,6 +252,10 @@ model Character {
   progressEntries ProgressEntry[]
   eventParticipations EventParticipation[]
   badges      CharacterBadge[]
+  combatParticipations CombatParticipant[]
+  combatActionsAsActor CombatAction[]     @relation("CombatActionActor")
+  combatActionsAsTarget CombatAction[]    @relation("CombatActionTarget")
+  conditions  CharacterCondition[]
 
   @@index([ownerId])
   @@index([worldId])
@@ -526,4 +576,151 @@ model ModerationReport {
   @@index([status, createdAt])
   @@index([reporterId, createdAt])
   @@index([targetType, targetId])
+}
+
+model DocCategory {
+  id          String    @id @default(uuid())
+  name        String
+  description String?
+  worldId     String?
+  sortOrder   Int       @default(0)
+  isPublic    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  createdById String?
+  world       World?    @relation(fields: [worldId], references: [id], onDelete: SetNull)
+  createdBy   User?     @relation("DocCategoryCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  pages       DocPage[]
+
+  @@index([worldId, sortOrder])
+}
+
+model DocPage {
+  id          String      @id @default(uuid())
+  title       String
+  content     String
+  categoryId  String
+  authorId    String
+  isPublished Boolean     @default(false)
+  sortOrder   Int         @default(0)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  category    DocCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  author      User        @relation("DocPageAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([categoryId, sortOrder])
+  @@index([authorId])
+}
+
+model MediaAsset {
+  id           String    @id @default(uuid())
+  name         String
+  url          String
+  type         MediaType
+  uploadedById String
+  worldId      String?
+  createdAt    DateTime  @default(now())
+  uploadedBy   User      @relation("MediaAssetUploader", fields: [uploadedById], references: [id], onDelete: Cascade)
+  world        World?    @relation(fields: [worldId], references: [id], onDelete: SetNull)
+
+  @@index([uploadedById, createdAt])
+  @@index([worldId])
+}
+
+model Idea {
+  id        String     @id @default(uuid())
+  title     String
+  content   String
+  authorId  String
+  status    IdeaStatus @default(OPEN)
+  category  String?
+  gmNote    String?
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  author    User       @relation("IdeaAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([authorId, status, createdAt])
+  @@index([status, createdAt])
+}
+
+model CombatEncounter {
+  id          String           @id @default(uuid())
+  worldId     String
+  title       String
+  status      CombatStatus     @default(PREPARING)
+  roundNumber Int              @default(0)
+  gmId        String
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  world       World            @relation(fields: [worldId], references: [id], onDelete: Cascade)
+  gm          User             @relation("CombatEncounterGM", fields: [gmId], references: [id], onDelete: Cascade)
+  participants CombatParticipant[]
+  actions     CombatAction[]
+
+  @@index([worldId, status, createdAt])
+  @@index([gmId, createdAt])
+}
+
+model CombatParticipant {
+  id          String           @id @default(uuid())
+  encounterId String
+  characterId String
+  initiative  Int?
+  hp          Int
+  maxHp       Int
+  isAlive     Boolean          @default(true)
+  turnOrder   Int?
+  joinedAt    DateTime         @default(now())
+  encounter   CombatEncounter  @relation(fields: [encounterId], references: [id], onDelete: Cascade)
+  character   Character        @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  effects     CombatEffect[]
+
+  @@unique([encounterId, characterId])
+  @@index([encounterId, turnOrder])
+}
+
+model CombatAction {
+  id          String           @id @default(uuid())
+  encounterId String
+  roundNumber Int
+  actorId     String
+  actionType  CombatActionType
+  targetId    String?
+  description String?
+  rollResult  Int?
+  damage      Int?
+  createdAt   DateTime         @default(now())
+  encounter   CombatEncounter  @relation(fields: [encounterId], references: [id], onDelete: Cascade)
+  actor       Character        @relation("CombatActionActor", fields: [actorId], references: [id], onDelete: Cascade)
+  target      Character?       @relation("CombatActionTarget", fields: [targetId], references: [id], onDelete: SetNull)
+  effects     CombatEffect[]
+
+  @@index([encounterId, roundNumber, createdAt])
+  @@index([actorId, createdAt])
+}
+
+model CombatEffect {
+  id             String            @id @default(uuid())
+  participantId  String
+  name           String
+  description    String?
+  duration       Int
+  appliedAt      Int
+  sourceActionId String?
+  participant    CombatParticipant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  sourceAction   CombatAction?     @relation(fields: [sourceActionId], references: [id], onDelete: SetNull)
+
+  @@index([participantId])
+}
+
+model CharacterCondition {
+  id          String                 @id @default(uuid())
+  characterId String
+  condition   CharacterConditionType
+  label       String?
+  encounterId String?
+  appliedAt   DateTime               @default(now())
+  character   Character              @relation(fields: [characterId], references: [id], onDelete: Cascade)
+
+  @@index([characterId, condition])
+  @@index([encounterId])
 }

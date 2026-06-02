@@ -50,6 +50,11 @@ export class CharactersController {
     return this.charactersService.create(user.userId, dto);
   }
 
+  @Get(":characterId/rank")
+  getCharacterRank(@Param("characterId") characterId: string) {
+    return this.charactersService.getCharacterRank(characterId);
+  }
+
   @Get(":characterId")
   getById(
     @Param("characterId") characterId: string,

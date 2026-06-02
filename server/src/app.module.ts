@@ -1,6 +1,9 @@
 import { Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
 import { ActivityLogModule } from "./activity-log/activity-log.module";
+import { CombatModule } from "./combat/combat.module";
+import { DocsModule } from "./docs/docs.module";
+import { IdeasModule } from "./ideas/ideas.module";
 import { AdminModule } from "./admin/admin.module";
 import { BadgesModule } from "./badges/badges.module";
 import { AuthModule } from "./auth/auth.module";
@@ -40,6 +43,9 @@ import { WorldsModule } from "./worlds/worlds.module";
     ForumModule,
     ModerationModule,
     RankingsModule,
+    DocsModule,
+    IdeasModule,
+    CombatModule,
     AuthModule,
   ],
 })

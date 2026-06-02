@@ -158,6 +158,15 @@ export function DashboardShell() {
               <Button asChild size="lg" variant="secondary">
                 <Link href="/worlds">Swiaty</Link>
               </Button>
+              <Button asChild size="lg" variant="secondary">
+                <Link href="/docs">Dokumentacja</Link>
+              </Button>
+              <Button asChild size="lg" variant="secondary">
+                <Link href="/ideas">Pomysły</Link>
+              </Button>
+              <Button asChild size="lg" variant="secondary">
+                <Link href="/combat">Starcia</Link>
+              </Button>
               {canModerate ? (
                 <Button asChild size="lg" variant="secondary">
                   <Link href="/moderation">Moderacja</Link>

@@ -15,17 +15,22 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
   awardBadge,
+  createDocCategory,
+  createDocPage,
+  createMediaAsset,
   createWorld,
   createWorldStatDefinition,
   getApiErrorMessage,
   getBadges,
   getCurrentUser,
+  getDocCategories,
+  getMediaAssets,
   getSkillProposalsReviewQueue,
   getWorlds,
   reviewSkillProposal,
 } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
-import type { AwardBadgePayload, Badge as BadgeDefinition, Role, SkillProposal, SkillProposalStatus } from "@/lib/types";
+import type { AwardBadgePayload, Badge as BadgeDefinition, MediaType, Role, SkillProposal, SkillProposalStatus, World } from "@/lib/types";
 import { statDefinitionSchema, worldSchema } from "@/lib/validators";
 import { ForumCategoriesManager } from "@/components/forum/forum-categories-manager";
 
@@ -241,6 +246,12 @@ export function WorldManagementShell() {
               </Button>
               <Button asChild size="lg" variant="secondary">
                 <Link href="/moderation">Moderacja</Link>
+              </Button>
+              <Button asChild size="lg" variant="secondary">
+                <Link href="/combat">Starcia</Link>
+              </Button>
+              <Button asChild size="lg" variant="secondary">
+                <Link href="/combat/new">Nowe starcie</Link>
               </Button>
             </div>
           </div>
@@ -513,6 +524,10 @@ export function WorldManagementShell() {
         <ForumCategoriesManager />
 
         <MgBadgesSection />
+
+        <MgDocsSection worlds={worlds} />
+
+        <MgMediaSection worlds={worlds} />
       </div>
     </div>
   );
@@ -703,6 +718,301 @@ function SkillProposalReviewCard({
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+function MgDocsSection({ worlds }: { worlds: World[] }) {
+  const queryClient = useQueryClient();
+  const [worldId, setWorldId] = useState("");
+  const [categoryId, setCategoryId] = useState("");
+
+  const categoriesQuery = useQuery({
+    queryKey: ["doc-categories-mg", worldId],
+    queryFn: () => getDocCategories(worldId || undefined),
+  });
+
+  const categories = categoriesQuery.data?.categories ?? [];
+
+  const categoryMutation = useMutation({
+    mutationFn: (values: { name: string; description: string; isPublic: boolean }) =>
+      createDocCategory({ ...values, worldId: worldId || undefined }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["doc-categories-mg"] }),
+  });
+
+  const pageMutation = useMutation({
+    mutationFn: (values: { title: string; content: string; isPublished: boolean }) =>
+      createDocPage({ ...values, categoryId }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["doc-categories-mg"] }),
+  });
+
+  const [catName, setCatName] = useState("");
+  const [catDesc, setCatDesc] = useState("");
+  const [catPublic, setCatPublic] = useState(true);
+  const [pageTitle, setPageTitle] = useState("");
+  const [pageContent, setPageContent] = useState("");
+  const [pagePublished, setPagePublished] = useState(false);
+
+  return (
+    <section className="space-y-4">
+      <div>
+        <h2 className="font-display text-3xl text-[color:var(--foreground)]">Dokumentacja</h2>
+        <p className="mt-2 text-sm leading-7 text-[color:var(--foreground-muted)]">
+          Twórz kategorie i strony dokumentacji świata dostępne dla graczy.
+        </p>
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>Nowa kategoria</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div>
+              <Label>Świat (opcjonalny)</Label>
+              <select
+                className="mt-1 w-full rounded-[14px] border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm"
+                value={worldId}
+                onChange={(e) => setWorldId(e.target.value)}
+              >
+                <option value="">Bez świata (globalne)</option>
+                {worlds.map((w) => (
+                  <option key={w.id} value={w.id}>
+                    {w.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <Label>Nazwa</Label>
+              <Input value={catName} onChange={(e) => setCatName(e.target.value)} placeholder="Nazwa kategorii" />
+            </div>
+            <div>
+              <Label>Opis</Label>
+              <Input value={catDesc} onChange={(e) => setCatDesc(e.target.value)} placeholder="Opis (opcjonalny)" />
+            </div>
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="cat-public"
+                checked={catPublic}
+                onChange={(e) => setCatPublic(e.target.checked)}
+              />
+              <Label htmlFor="cat-public">Widoczna dla graczy</Label>
+            </div>
+            {categoryMutation.isError && (
+              <p className="text-sm text-[#9d3d2d]">{getApiErrorMessage(categoryMutation.error)}</p>
+            )}
+            {categoryMutation.isSuccess && (
+              <p className="text-sm text-green-700">Kategoria utworzona!</p>
+            )}
+            <Button
+              disabled={!catName || categoryMutation.isPending}
+              onClick={() =>
+                categoryMutation.mutate({
+                  name: catName,
+                  description: catDesc,
+                  isPublic: catPublic,
+                })
+              }
+            >
+              Utwórz kategorię
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Nowa strona</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div>
+              <Label>Kategoria</Label>
+              <select
+                className="mt-1 w-full rounded-[14px] border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm"
+                value={categoryId}
+                onChange={(e) => setCategoryId(e.target.value)}
+              >
+                <option value="">Wybierz kategorię</option>
+                {categories.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <Label>Tytuł</Label>
+              <Input value={pageTitle} onChange={(e) => setPageTitle(e.target.value)} placeholder="Tytuł strony" />
+            </div>
+            <div>
+              <Label>Treść (Markdown)</Label>
+              <Textarea
+                rows={5}
+                value={pageContent}
+                onChange={(e) => setPageContent(e.target.value)}
+                placeholder="Treść strony w formacie Markdown..."
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="page-published"
+                checked={pagePublished}
+                onChange={(e) => setPagePublished(e.target.checked)}
+              />
+              <Label htmlFor="page-published">Opublikowana</Label>
+            </div>
+            {pageMutation.isError && (
+              <p className="text-sm text-[#9d3d2d]">{getApiErrorMessage(pageMutation.error)}</p>
+            )}
+            {pageMutation.isSuccess && (
+              <p className="text-sm text-green-700">Strona utworzona!</p>
+            )}
+            <Button
+              disabled={!categoryId || !pageTitle || pageMutation.isPending}
+              onClick={() =>
+                pageMutation.mutate({
+                  title: pageTitle,
+                  content: pageContent,
+                  isPublished: pagePublished,
+                })
+              }
+            >
+              Utwórz stronę
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    </section>
+  );
+}
+
+function MgMediaSection({ worlds }: { worlds: World[] }) {
+  const queryClient = useQueryClient();
+  const [worldId, setWorldId] = useState("");
+  const [name, setName] = useState("");
+  const [url, setUrl] = useState("");
+  const [type, setType] = useState<MediaType>("IMAGE");
+
+  const assetsQuery = useQuery({
+    queryKey: ["media-assets-mg", worldId],
+    queryFn: () => getMediaAssets(worldId || undefined),
+  });
+
+  const assets = assetsQuery.data?.assets ?? [];
+
+  const mutation = useMutation({
+    mutationFn: () => createMediaAsset({ name, url, type, worldId: worldId || undefined }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["media-assets-mg"] });
+      setName("");
+      setUrl("");
+    },
+  });
+
+  return (
+    <section className="space-y-4">
+      <div>
+        <h2 className="font-display text-3xl text-[color:var(--foreground)]">Media</h2>
+        <p className="mt-2 text-sm leading-7 text-[color:var(--foreground-muted)]">
+          Zarządzaj zasobami medialnymi (obrazy, PDF, mapy). Podaj URL pliku — bez uploadu.
+        </p>
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>Dodaj zasób</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div>
+              <Label>Świat (opcjonalny)</Label>
+              <select
+                className="mt-1 w-full rounded-[14px] border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm"
+                value={worldId}
+                onChange={(e) => setWorldId(e.target.value)}
+              >
+                <option value="">Bez świata (globalne)</option>
+                {worlds.map((w) => (
+                  <option key={w.id} value={w.id}>
+                    {w.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <Label>Nazwa</Label>
+              <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Nazwa zasobu" />
+            </div>
+            <div>
+              <Label>URL</Label>
+              <Input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://..." />
+            </div>
+            <div>
+              <Label>Typ</Label>
+              <select
+                className="mt-1 w-full rounded-[14px] border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm"
+                value={type}
+                onChange={(e) => setType(e.target.value as MediaType)}
+              >
+                <option value="IMAGE">Obraz</option>
+                <option value="PDF">PDF</option>
+                <option value="MAP">Mapa</option>
+              </select>
+            </div>
+            {mutation.isError && (
+              <p className="text-sm text-[#9d3d2d]">{getApiErrorMessage(mutation.error)}</p>
+            )}
+            {mutation.isSuccess && (
+              <p className="text-sm text-green-700">Zasób dodany!</p>
+            )}
+            <Button
+              disabled={!name || !url || mutation.isPending}
+              onClick={() => mutation.mutate()}
+            >
+              Dodaj zasób
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Zasoby ({assets.length})</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {assetsQuery.isLoading ? (
+              <p className="text-sm text-[color:var(--foreground-muted)]">Ładowanie...</p>
+            ) : assets.length === 0 ? (
+              <p className="text-sm text-[color:var(--foreground-muted)]">Brak zasobów.</p>
+            ) : (
+              <div className="space-y-2">
+                {assets.map((asset) => (
+                  <div
+                    key={asset.id}
+                    className="flex items-center justify-between rounded-[14px] border border-[color:var(--border)] px-3 py-2 text-sm"
+                  >
+                    <div>
+                      <span className="font-semibold">{asset.name}</span>
+                      <span className="ml-2 text-xs text-[color:var(--foreground-muted)]">
+                        [{asset.type}]
+                      </span>
+                    </div>
+                    <a
+                      href={asset.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-xs text-blue-600 hover:underline"
+                    >
+                      Otwórz
+                    </a>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    </section>
   );
 }
 

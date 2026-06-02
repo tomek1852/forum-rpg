@@ -84,6 +84,26 @@ import type {
   BadgesResponse,
   CharacterBadgesResponse,
   CreateBadgePayload,
+  CreateDocCategoryPayload,
+  CreateDocPagePayload,
+  CreateIdeaPayload,
+  CreateMediaAssetPayload,
+  DocCategoriesResponse,
+  DocCategoryPagesResponse,
+  DocPageResponse,
+  IdeaResponse,
+  IdeasResponse,
+  IdeaStatus,
+  MediaAssetsResponse,
+  MediaAssetResponse,
+  UpdateDocCategoryPayload,
+  UpdateDocPagePayload,
+  UpdateIdeaStatusPayload,
+  CombatEncountersResponse,
+  CombatEncounterResponse,
+  CombatStatus,
+  CreateCombatPayload,
+  SetInitiativePayload,
 } from "./types";
 
 const baseURL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001/api";
@@ -672,4 +692,124 @@ export function getApiErrorMessage(error: unknown) {
   }
 
   return "Wystąpił nieoczekiwany błąd.";
+}
+
+// Docs
+
+export async function getDocCategories(worldId?: string): Promise<DocCategoriesResponse> {
+  const { data } = await api.get<DocCategoriesResponse>("/docs/categories", {
+    params: worldId ? { worldId } : {},
+  });
+  return data;
+}
+
+export async function getDocCategoryPages(categoryId: string): Promise<DocCategoryPagesResponse> {
+  const { data } = await api.get<DocCategoryPagesResponse>(`/docs/categories/${categoryId}/pages`);
+  return data;
+}
+
+export async function getDocPage(pageId: string): Promise<DocPageResponse> {
+  const { data } = await api.get<DocPageResponse>(`/docs/pages/${pageId}`);
+  return data;
+}
+
+export async function createDocCategory(
+  payload: CreateDocCategoryPayload,
+): Promise<{ category: import("./types").DocCategory }> {
+  const { data } = await api.post("/docs/categories", payload);
+  return data;
+}
+
+export async function updateDocCategory(
+  id: string,
+  payload: UpdateDocCategoryPayload,
+): Promise<{ category: import("./types").DocCategory }> {
+  const { data } = await api.patch(`/docs/categories/${id}`, payload);
+  return data;
+}
+
+export async function createDocPage(
+  payload: CreateDocPagePayload,
+): Promise<{ page: import("./types").DocPage }> {
+  const { data } = await api.post("/docs/pages", payload);
+  return data;
+}
+
+export async function updateDocPage(
+  id: string,
+  payload: UpdateDocPagePayload,
+): Promise<{ page: import("./types").DocPage }> {
+  const { data } = await api.patch(`/docs/pages/${id}`, payload);
+  return data;
+}
+
+export async function getMediaAssets(worldId?: string): Promise<MediaAssetsResponse> {
+  const { data } = await api.get<MediaAssetsResponse>("/docs/media", {
+    params: worldId ? { worldId } : {},
+  });
+  return data;
+}
+
+export async function createMediaAsset(
+  payload: CreateMediaAssetPayload,
+): Promise<MediaAssetResponse> {
+  const { data } = await api.post<MediaAssetResponse>("/docs/media", payload);
+  return data;
+}
+
+// Ideas
+
+export async function getIdeas(status?: IdeaStatus): Promise<IdeasResponse> {
+  const { data } = await api.get<IdeasResponse>("/ideas", {
+    params: status ? { status } : {},
+  });
+  return data;
+}
+
+export async function createIdea(payload: CreateIdeaPayload): Promise<IdeaResponse> {
+  const { data } = await api.post<IdeaResponse>("/ideas", payload);
+  return data;
+}
+
+export async function updateIdeaStatus(
+  id: string,
+  payload: UpdateIdeaStatusPayload,
+): Promise<IdeaResponse> {
+  const { data } = await api.patch<IdeaResponse>(`/ideas/${id}/status`, payload);
+  return data;
+}
+
+// Combat
+
+export async function getCombatEncounters(params?: {
+  worldId?: string;
+  status?: CombatStatus;
+}): Promise<CombatEncountersResponse> {
+  const { data } = await api.get<CombatEncountersResponse>("/combat", { params });
+  return data;
+}
+
+export async function getCombatEncounter(id: string): Promise<CombatEncounterResponse> {
+  const { data } = await api.get<CombatEncounterResponse>(`/combat/${id}`);
+  return data;
+}
+
+export async function createCombatEncounter(
+  payload: CreateCombatPayload,
+): Promise<CombatEncounterResponse> {
+  const { data } = await api.post<CombatEncounterResponse>("/combat", payload);
+  return data;
+}
+
+export async function setCombatInitiative(
+  id: string,
+  payload: SetInitiativePayload,
+): Promise<CombatEncounterResponse> {
+  const { data } = await api.post<CombatEncounterResponse>(`/combat/${id}/initiative`, payload);
+  return data;
+}
+
+export async function startCombatEncounter(id: string): Promise<CombatEncounterResponse> {
+  const { data } = await api.post<CombatEncounterResponse>(`/combat/${id}/start`);
+  return data;
 }

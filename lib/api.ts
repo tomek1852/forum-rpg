@@ -41,6 +41,8 @@ import type {
   ForumCategoryResponse,
   ForumPostResponse,
   ForumReplyPayload,
+  ForumSearchParams,
+  ForumSearchResponse,
   ForumThreadPayload,
   ForumThreadResponse,
   UpdateForumCategoryPayload,
@@ -104,6 +106,9 @@ import type {
   CombatStatus,
   CreateCombatPayload,
   SetInitiativePayload,
+  PerformActionPayload,
+  AddCombatEffectPayload,
+  CombatHistoryResponse,
 } from "./types";
 
 const baseURL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001/api";
@@ -273,6 +278,11 @@ export async function getMyCharacters() {
   return data;
 }
 
+export async function getAllCharacters() {
+  const { data } = await api.get<{ characters: { id: string; name: string; avatarUrl: string | null }[] }>("/characters/all");
+  return data;
+}
+
 export async function getCharactersByUser(userId: string) {
   const { data } = await api.get<CharactersResponse>(`/characters/user/${userId}`);
   return data;
@@ -392,6 +402,24 @@ export async function addCharacterProgress(
   return data;
 }
 
+export async function advanceCharacterStat(
+  characterId: string,
+  payload: { statDefinitionId: string; note?: string },
+) {
+  const { data } = await api.post<{ message: string; character: import("./types").Character }>(
+    `/characters/${characterId}/advance-stat`,
+    payload,
+  );
+  return data;
+}
+
+export async function getCharacterStatAdvancements(characterId: string) {
+  const { data } = await api.get<{ advancements: import("./types").StatAdvancement[] }>(
+    `/characters/${characterId}/stat-advancements`,
+  );
+  return data;
+}
+
 export async function createWorld(payload: CreateWorldPayload) {
   const { data } = await api.post<WorldMutationResponse>("/worlds", payload);
   return data;
@@ -477,6 +505,11 @@ export async function createForumThread(payload: ForumThreadPayload) {
     "/forum/threads",
     payload,
   );
+  return data;
+}
+
+export async function searchForumThreads(params: ForumSearchParams) {
+  const { data } = await api.get<ForumSearchResponse>("/forum/search", { params });
   return data;
 }
 
@@ -811,5 +844,42 @@ export async function setCombatInitiative(
 
 export async function startCombatEncounter(id: string): Promise<CombatEncounterResponse> {
   const { data } = await api.post<CombatEncounterResponse>(`/combat/${id}/start`);
+  return data;
+}
+
+export async function performCombatAction(
+  id: string,
+  payload: PerformActionPayload,
+): Promise<CombatEncounterResponse> {
+  const { data } = await api.post<CombatEncounterResponse>(`/combat/${id}/actions`, payload);
+  return data;
+}
+
+export async function addCombatEffect(
+  id: string,
+  payload: AddCombatEffectPayload,
+): Promise<CombatEncounterResponse> {
+  const { data } = await api.post<CombatEncounterResponse>(`/combat/${id}/effects`, payload);
+  return data;
+}
+
+export async function removeCombatEffect(
+  id: string,
+  effectId: string,
+): Promise<CombatEncounterResponse> {
+  const { data } = await api.delete<CombatEncounterResponse>(`/combat/${id}/effects/${effectId}`);
+  return data;
+}
+
+export async function endCombatEncounter(
+  id: string,
+  cancel = false,
+): Promise<CombatEncounterResponse> {
+  const { data } = await api.post<CombatEncounterResponse>(`/combat/${id}/end`, { cancel });
+  return data;
+}
+
+export async function getCharacterCombatHistory(characterId: string): Promise<CombatHistoryResponse> {
+  const { data } = await api.get<CombatHistoryResponse>(`/characters/${characterId}/combat-history`);
   return data;
 }

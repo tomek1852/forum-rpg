@@ -9,6 +9,7 @@ import { Character, Prisma, SkillProposalStatus, StatValueType } from "@prisma/c
 import { ActivityLogService } from "../activity-log/activity-log.service";
 import { BadgesService } from "../badges/badges.service";
 import { PrismaService } from "../prisma/prisma.service";
+import { AdvanceStatDto } from "./dto/advance-stat.dto";
 import { AddProgressDto } from "./dto/add-progress.dto";
 import { CharacterRankingQueryDto } from "./dto/character-ranking-query.dto";
 import { CreateCharacterDto } from "./dto/create-character.dto";
@@ -161,6 +162,14 @@ export class CharactersService {
         this.serializeCharacter(character, { includeProposals: false }),
       ),
     };
+  }
+
+  async listAll() {
+    const characters = await this.prisma.character.findMany({
+      orderBy: { name: "asc" },
+      select: { id: true, name: true, avatarUrl: true },
+    });
+    return { characters };
   }
 
   async listRankings(query: CharacterRankingQueryDto = {}) {
@@ -512,6 +521,113 @@ export class CharactersService {
     });
 
     return { entries };
+  }
+
+  async advanceStat(characterId: string, ownerId: string, dto: AdvanceStatDto) {
+    const character = await this.prisma.character.findUnique({
+      where: { id: characterId },
+      select: {
+        id: true,
+        ownerId: true,
+        worldId: true,
+        experiencePoints: true,
+        heroPoints: true,
+        statValues: {
+          where: { statDefinition: { id: dto.statDefinitionId } },
+          include: { statDefinition: true },
+        },
+      },
+    });
+
+    if (!character) throw new NotFoundException("Nie znaleziono postaci.");
+    if (character.ownerId !== ownerId) throw new ForbiddenException("Mozesz awansowac tylko swoje postacie.");
+
+    const statValue = character.statValues[0];
+    if (!statValue) throw new BadRequestException("Nie znaleziono statystyki dla tej postaci.");
+
+    const definition = statValue.statDefinition;
+
+    if (definition.valueType !== StatValueType.NUMBER) {
+      throw new BadRequestException("Awansowac mozna tylko statystyki numeryczne.");
+    }
+
+    const costExp = definition.advancementCostExp;
+    const costPh = definition.advancementCostPh;
+
+    if (costExp === 0 && costPh === 0) {
+      throw new BadRequestException("Ta statystyka nie ma zdefiniowanego kosztu awansu.");
+    }
+
+    if (character.experiencePoints < costExp) {
+      throw new BadRequestException(`Niewystarczajaca liczba EXP. Potrzeba: ${costExp}, masz: ${character.experiencePoints}.`);
+    }
+
+    if (character.heroPoints < costPh) {
+      throw new BadRequestException(`Niewystarczajaca liczba PH. Potrzeba: ${costPh}, masz: ${character.heroPoints}.`);
+    }
+
+    const valueBefore = statValue.numericValue ?? 0;
+    const valueAfter = valueBefore + 1;
+
+    if (definition.maxValue !== null && valueAfter > definition.maxValue) {
+      throw new BadRequestException(`Statystyka "${definition.label}" osiagnela maksymalna wartosc (${definition.maxValue}).`);
+    }
+
+    const result = await this.prisma.$transaction(async (tx) => {
+      const updatedStatValue = await tx.characterStatValue.update({
+        where: { id: statValue.id },
+        data: { numericValue: valueAfter },
+      });
+
+      await tx.statAdvancement.create({
+        data: {
+          characterId,
+          statDefinitionId: dto.statDefinitionId,
+          valueBefore,
+          valueAfter,
+          costExpSpent: costExp,
+          costPhSpent: costPh,
+          note: dto.note?.trim() || null,
+        },
+      });
+
+      const updatedCharacter = await tx.character.update({
+        where: { id: characterId },
+        data: {
+          experiencePoints: { decrement: costExp },
+          heroPoints: { decrement: costPh },
+        },
+        include: characterInclude,
+      });
+
+      return { updatedStatValue, updatedCharacter };
+    });
+
+    this.cache.invalidate("rankings:");
+    this.cache.invalidate(`rank:${characterId}`);
+
+    return {
+      message: `Statystyka "${definition.label}" zostala podniesiona do ${valueAfter}.`,
+      character: this.serializeCharacter(result.updatedCharacter, { includeProposals: true }),
+    };
+  }
+
+  async listStatAdvancements(characterId: string, requesterId: string) {
+    const character = await this.prisma.character.findUnique({
+      where: { id: characterId },
+      select: { id: true, ownerId: true },
+    });
+
+    if (!character) throw new NotFoundException("Nie znaleziono postaci.");
+    if (character.ownerId !== requesterId) throw new ForbiddenException("Brak dostepu.");
+
+    const advancements = await this.prisma.statAdvancement.findMany({
+      where: { characterId },
+      include: { statDefinition: { select: { key: true, label: true } } },
+      orderBy: { createdAt: "desc" },
+    });
+
+    return { advancements };
   }
 
   private canManageProgress(role?: string) {

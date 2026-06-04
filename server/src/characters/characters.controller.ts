@@ -13,7 +13,9 @@ import { CurrentUser } from "../common/decorators/current-user.decorator";
 import { Roles } from "../common/decorators/roles.decorator";
 import { JwtAuthGuard } from "../common/guards/jwt-auth.guard";
 import { RolesGuard } from "../common/guards/roles.guard";
+import { CombatService } from "../combat/combat.service";
 import { CharactersService } from "./characters.service";
+import { AdvanceStatDto } from "./dto/advance-stat.dto";
 import { AddProgressDto } from "./dto/add-progress.dto";
 import { CharacterRankingQueryDto } from "./dto/character-ranking-query.dto";
 import { CreateCharacterDto } from "./dto/create-character.dto";
@@ -25,6 +27,8 @@ export class CharactersController {
   constructor(
     @Inject(CharactersService)
     private readonly charactersService: CharactersService,
+    @Inject(CombatService)
+    private readonly combatService: CombatService,
   ) {}
 
   @Get("my")
@@ -35,6 +39,13 @@ export class CharactersController {
   @Get("user/:userId")
   listByUser(@Param("userId") userId: string) {
     return this.charactersService.listByOwner(userId);
+  }
+
+  @Get("all")
+  @UseGuards(RolesGuard)
+  @Roles("GM", "ADMIN")
+  listAll() {
+    return this.charactersService.listAll();
   }
 
   @Get("rankings")
@@ -63,6 +74,11 @@ export class CharactersController {
     return this.charactersService.getById(characterId, user.userId, user.role);
   }
 
+  @Get(":characterId/combat-history")
+  getCombatHistory(@Param("characterId") characterId: string) {
+    return this.combatService.getCombatHistory(characterId);
+  }
+
   @Get(":characterId/progress")
   listProgressHistory(
     @Param("characterId") characterId: string,
@@ -80,6 +96,23 @@ export class CharactersController {
     @Body() dto: AddProgressDto,
   ) {
     return this.charactersService.grantProgress(characterId, user, dto);
+  }
+
+  @Post(":characterId/advance-stat")
+  advanceStat(
+    @Param("characterId") characterId: string,
+    @CurrentUser() user: { userId: string },
+    @Body() dto: AdvanceStatDto,
+  ) {
+    return this.charactersService.advanceStat(characterId, user.userId, dto);
+  }
+
+  @Get(":characterId/stat-advancements")
+  listStatAdvancements(
+    @Param("characterId") characterId: string,
+    @CurrentUser() user: { userId: string },
+  ) {
+    return this.charactersService.listStatAdvancements(characterId, user.userId);
   }
 
   @Patch(":characterId")

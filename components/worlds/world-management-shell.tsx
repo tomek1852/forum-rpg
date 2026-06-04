@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
+  getAllCharacters,
   awardBadge,
   createDocCategory,
   createDocPage,
@@ -22,6 +23,7 @@ import {
   createWorldStatDefinition,
   getApiErrorMessage,
   getBadges,
+  getCombatEncounters,
   getCurrentUser,
   getDocCategories,
   getMediaAssets,
@@ -30,7 +32,7 @@ import {
   reviewSkillProposal,
 } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
-import type { AwardBadgePayload, Badge as BadgeDefinition, MediaType, Role, SkillProposal, SkillProposalStatus, World } from "@/lib/types";
+import type { AwardBadgePayload, Badge as BadgeDefinition, CombatEncounterSummary, CombatStatus, MediaType, Role, SkillProposal, SkillProposalStatus, World } from "@/lib/types";
 import { statDefinitionSchema, worldSchema } from "@/lib/validators";
 import { ForumCategoriesManager } from "@/components/forum/forum-categories-manager";
 
@@ -525,6 +527,8 @@ export function WorldManagementShell() {
 
         <MgBadgesSection />
 
+        <MgCombatSection />
+
         <MgDocsSection worlds={worlds} />
 
         <MgMediaSection worlds={worlds} />
@@ -536,6 +540,8 @@ export function WorldManagementShell() {
 function MgBadgesSection() {
   const queryClient = useQueryClient();
   const [characterId, setCharacterId] = useState("");
+  const [characterSearch, setCharacterSearch] = useState("");
+  const [characterDropdownOpen, setCharacterDropdownOpen] = useState(false);
   const [selectedBadgeId, setSelectedBadgeId] = useState("");
   const [note, setNote] = useState("");
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
@@ -546,12 +552,18 @@ function MgBadgesSection() {
     queryFn: getBadges,
   });
 
+  const allCharactersQuery = useQuery({
+    queryKey: ["mg-all-characters"],
+    queryFn: getAllCharacters,
+  });
+
   const awardMutation = useMutation({
     mutationFn: ({ cid, payload }: { cid: string; payload: AwardBadgePayload }) =>
       awardBadge(cid, payload),
     onSuccess: () => {
       setSuccessMsg("Odznaka przyznana.");
       setCharacterId("");
+      setCharacterSearch("");
       setSelectedBadgeId("");
       setNote("");
       setErrorMsg(null);
@@ -564,11 +576,16 @@ function MgBadgesSection() {
   });
 
   const badges: BadgeDefinition[] = badgesQuery.data?.badges ?? [];
+  const allCharacters = allCharactersQuery.data?.characters ?? [];
+  const filteredCharacters = allCharacters.filter((c) =>
+    c.name.toLowerCase().includes(characterSearch.toLowerCase()),
+  );
+  const selectedCharacterName = allCharacters.find((c) => c.id === characterId)?.name ?? "";
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!characterId.trim() || !selectedBadgeId) {
-      setErrorMsg("Podaj ID postaci i wybierz odznakę.");
+      setErrorMsg("Wybierz postać i odznakę.");
       return;
     }
     awardMutation.mutate({
@@ -590,18 +607,59 @@ function MgBadgesSection() {
         <CardHeader>
           <CardTitle>Ręczne przyznanie odznaki</CardTitle>
           <CardDescription>
-            Podaj ID postaci (UUID ze strony profilu) i wybierz odznakę.
+            Wybierz postać z listy i przyznaj jej odznakę.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="grid gap-4">
-            <div>
-              <Label>ID postaci *</Label>
-              <Input
-                value={characterId}
-                onChange={(e) => setCharacterId(e.target.value)}
-                placeholder="UUID postaci"
-              />
+            <div className="relative">
+              <Label>Postać *</Label>
+              <button
+                type="button"
+                className="w-full border rounded px-3 py-2 text-sm bg-background text-left flex justify-between items-center"
+                onClick={() => {
+                  setCharacterDropdownOpen((o) => !o);
+                  setCharacterSearch("");
+                }}
+              >
+                <span className={selectedCharacterName ? "" : "text-muted-foreground"}>
+                  {selectedCharacterName || "— wybierz postać —"}
+                </span>
+                <span className="ml-2 opacity-50">▾</span>
+              </button>
+              {characterDropdownOpen && (
+                <div className="absolute z-50 mt-1 w-full border rounded bg-background shadow-md">
+                  <div className="p-2 border-b">
+                    <Input
+                      autoFocus
+                      placeholder="Szukaj postaci..."
+                      value={characterSearch}
+                      onChange={(e) => setCharacterSearch(e.target.value)}
+                      className="h-8 text-sm"
+                    />
+                  </div>
+                  <ul className="max-h-56 overflow-y-auto">
+                    {filteredCharacters.length === 0 && (
+                      <li className="px-3 py-2 text-sm text-muted-foreground">Brak wyników</li>
+                    )}
+                    {filteredCharacters.map((c) => (
+                      <li
+                        key={c.id}
+                        className={`px-3 py-2 text-sm cursor-pointer hover:bg-muted flex items-center gap-2 ${characterId === c.id ? "font-semibold" : ""}`}
+                        onClick={() => {
+                          setCharacterId(c.id);
+                          setCharacterDropdownOpen(false);
+                        }}
+                      >
+                        {c.avatarUrl && (
+                          <img src={c.avatarUrl} alt="" className="w-5 h-5 rounded-full object-cover shrink-0" />
+                        )}
+                        {c.name}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
             <div>
               <Label>Odznaka *</Label>
@@ -718,6 +776,86 @@ function SkillProposalReviewCard({
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+const COMBAT_STATUS_LABELS: Record<CombatStatus, string> = {
+  PREPARING: "Przygotowanie",
+  ACTIVE: "Aktywne",
+  FINISHED: "Zakończone",
+  CANCELLED: "Anulowane",
+};
+
+function MgCombatSection() {
+  const { accessToken, hydrated } = useAuthStore((s) => s);
+  const [statusFilter, setStatusFilter] = useState<CombatStatus | "">("");
+
+  const encountersQuery = useQuery({
+    queryKey: ["combat-encounters-mg", statusFilter],
+    queryFn: () => getCombatEncounters(statusFilter ? { status: statusFilter } : undefined),
+    enabled: hydrated && Boolean(accessToken),
+  });
+
+  const encounters = encountersQuery.data?.encounters ?? [];
+
+  return (
+    <section className="space-y-4">
+      <div>
+        <h2 className="font-display text-3xl text-[color:var(--foreground)]">Walki</h2>
+        <p className="mt-2 text-sm leading-7 text-[color:var(--foreground-muted)]">
+          Lista wszystkich starć w świecie z możliwością filtrowania po statusie.
+        </p>
+      </div>
+
+      <div className="flex items-center gap-3 flex-wrap">
+        <select
+          className="h-9 rounded-[14px] border border-[color:var(--border)] bg-[color:var(--surface)] px-3 text-sm"
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value as CombatStatus | "")}
+        >
+          <option value="">Wszystkie statusy</option>
+          {(["PREPARING", "ACTIVE", "FINISHED", "CANCELLED"] as CombatStatus[]).map((s) => (
+            <option key={s} value={s}>{COMBAT_STATUS_LABELS[s]}</option>
+          ))}
+        </select>
+        <Link href="/combat/new">
+          <Button size="sm" variant="secondary">Nowe starcie</Button>
+        </Link>
+      </div>
+
+      {encountersQuery.isLoading ? (
+        <p className="text-sm text-[color:var(--foreground-muted)]">Ładowanie...</p>
+      ) : encounters.length === 0 ? (
+        <Card>
+          <CardContent className="py-8 text-sm text-[color:var(--foreground-muted)]">
+            Brak starć dla wybranego filtra.
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid gap-3">
+          {encounters.map((enc: CombatEncounterSummary) => (
+            <Card key={enc.id}>
+              <CardContent className="py-4">
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <div>
+                    <Link
+                      href={`/combat/${enc.id}`}
+                      className="font-semibold hover:underline text-[color:var(--foreground)]"
+                    >
+                      {enc.title}
+                    </Link>
+                    <p className="text-xs text-[color:var(--foreground-subtle)] mt-0.5">
+                      GM: {enc.gm.displayName ?? enc.gm.username} · {enc._count.participants} uczestników · {new Date(enc.createdAt).toLocaleDateString("pl-PL")}
+                    </p>
+                  </div>
+                  <Badge>{COMBAT_STATUS_LABELS[enc.status]}</Badge>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+    </section>
   );
 }
 
